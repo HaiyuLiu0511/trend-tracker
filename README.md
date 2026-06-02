@@ -1,6 +1,6 @@
 # Trend Tracker — AI 产业趋势追踪系统
 
-> **MVP v1.1** — 从多源数据采集到趋势信号计算的完整 Pipeline
+> **MVP v1.2** — 多源数据采集 → 趋势信号计算 + 公司维度数据沉淀
 
 ## 项目目标
 
@@ -10,7 +10,7 @@
 
 ---
 
-## 已完成能力（MVP v1.1）
+## 已完成能力（MVP v1.2）
 
 | 模块 | 状态 | 说明 |
 |------|------|------|
@@ -20,7 +20,8 @@
 | **信号计算** | ✅ 完成 | 三维度评分：资本信号（45%）+ 战略信号（35%）+ 研究信号（20%） |
 | **趋势加速度** | ✅ 完成 | 周环比变化率，五档趋势分类（Accelerating/Rising/Stable/Cooling/Declining） |
 | **资本流向** | ✅ 完成 | 按主题聚合融资金额与份额 |
-| **周报导出** | ✅ 完成 | 结构化 `weekly.json` + SHA256 校验快照 |
+| **公司维度** ⭐ | ✅ v1.2 新增 | 公司名称映射、公司动作记录、每周公司信号汇总 |
+| **周报导出** | ✅ 完成 | 结构化 `weekly.json`（含 `company_actions` + `company_weekly_summary` 区块）+ SHA256 校验快照 |
 | **Mock Pipeline** | ✅ 完成 | 两周期模拟数据完整走通全部计算链路 |
 | **Pipeline 日志** | ✅ 完成 | 每次运行记录到 `pipeline_runs` 表 |
 | **数据完整性校验** | ✅ 完成 | `verify()` 跨表一致性检查 |
@@ -51,6 +52,74 @@ All sub-scores capped at 0–10
 
 ---
 
+## Company Layer ⭐ (v1.2 新增)
+
+### 设计目标
+
+在不破坏 MVP v1.1 现有功能的前提下，增加 **公司维度数据沉淀能力**。每条事件如果在公司注册表中匹配到对应公司，则自动写入公司动作记录，并汇总为每周公司信号评分。
+
+### 核心组件
+
+| 组件 | 说明 |
+|------|------|
+| `companies` 表 | 公司注册表（12 列，含描述/成立年份/总部/行业标签），覆盖 23 家关键 AI 公司 |
+| `company_actions` 表 | 事件→公司动作记录（每条事件可能写入一条 `company_action`） |
+| `company_weekly_summary` 表 | 物化视图：每公司每周汇总（动作数、融资额、信号评分） |
+| `company_mapper.py` | 公司名称→`company_id` 映射器（别名表 + 数据库多级匹配） |
+
+### `weekly.json` 新增区块
+
+```json
+{
+  "company_actions": [
+    {
+      "company_id": "openai",
+      "company_name": "OpenAI",
+      "ticker": null,
+      "action_type": "PRODUCT_LAUNCH",
+      "action_date": "2026-06-01",
+      "theme_id": "ai_agent",
+      "amount_usd": null,
+      "description": "OpenAI launches Operator...",
+      "source_tier": "P1"
+    }
+  ],
+  "company_weekly_summary": [
+    {
+      "company_id": "openai",
+      "company_name": "OpenAI",
+      "ticker": null,
+      "primary_theme": "llm_frontier",
+      "action_count": 2,
+      "funding_usd": 0,
+      "launch_count": 2,
+      "research_count": 0,
+      "signal_score": 5.0
+    }
+  ]
+}
+```
+
+### 数据流
+
+```
+Events (company_name=raw) → company_mapper.py → companies.company_id
+    ↓
+company_actions (每个可匹配事件一条)
+    ↓
+stage_company_weekly_summary (按周聚合)
+    ↓
+weekly.json { company_actions + company_weekly_summary }
+```
+
+### 覆盖率
+
+- 种子公司：23 家（8 MVP + 15 扩展）
+- 别名映射：~65 条别名规则
+- 匹配方式：精确别名 → 数据库名称查询 → 模糊子串匹配
+
+---
+
 ## 项目目录结构
 
 ```
@@ -59,18 +128,20 @@ trend_tracker/
 │   ├── arxiv_collector.py       # arXiv API 论文采集
 │   ├── github_collector.py      # GitHub Trending 仓库采集
 │   ├── techcrunch_collector.py  # TechCrunch RSS 文章采集
-│   └── reuters_collector.py     # Reuters 预留（待 WebSearch 集成）
+│   └── reuters_collector.py     # Reuters 预留
 ├── processors/
-│   └── theme_mapper.py          # 关键词规则引擎 → 主题分类
+│   ├── theme_mapper.py          # 关键词规则引擎 → 主题分类
+│   └── company_mapper.py        # 公司名称 → company_id 映射器 ⭐
 ├── db/
-│   ├── db_init_v1.1.sql         # 完整 Schema（9 表 + 种子数据）
+│   ├── db_init_v1.1.sql         # v1.1 完整 Schema（9 表 + 种子数据）
+│   ├── migrations/
+│   │   └── 001_company_layer.sql # v1.2 迁移脚本 ⭐
 │   └── trend_tracker.db         # SQLite 运行时数据库（.gitignore）
 ├── trend_data/
 │   └── weekly/                  # 周报 JSON 导出（.gitignore）
-│       ├── 2026-W22.json
-│       └── 2026-W23.json
-├── pipeline_mock.py             # Mock 数据 Pipeline（两周期模拟）
-├── pipeline_real.py             # 真实数据 Pipeline（6 阶段：Collect → Export）
+├── pipeline_mock.py             # Mock 数据 Pipeline（v1.2，含 Company Layer） ⭐
+├── pipeline_real.py             # 真实数据 Pipeline（v1.2，8 阶段） ⭐
+├── pipeline_real_v1.2.py        # v1.2 真实 Pipeline（别名）
 ├── tests/                       # 测试目录（预留）
 ├── calculators/                 # 计算器目录（预留）
 ├── export/                      # 导出目录（预留）
@@ -78,19 +149,21 @@ trend_tracker/
 └── README.md
 ```
 
-### 数据库 Schema（9 表）
+### 数据库 Schema（11 表）
 
-| 表名 | 用途 |
-|------|------|
-| `themes` | 主题注册表（支持父子主题演化） |
-| `companies` | 公司注册表 |
-| `events` | 原始事件记录 |
-| `event_theme_mapping` | M:N 事件↔主题映射（权重、来源） |
-| `signals` | 周度三维信号评分 |
-| `trends_weekly` | 周度趋势加速度 |
-| `capital_flow` | 资本流向记录 |
-| `weekly_snapshots` | 周报不可变快照（SHA256 校验） |
-| `pipeline_runs` | Pipeline 执行日志 |
+| 表名 | 用途 | 版本 |
+|------|------|------|
+| `themes` | 主题注册表（支持父子主题演化） | v1.1 |
+| `companies` | 公司注册表（12 列） | v1.2 ⭐ |
+| `events` | 原始事件记录 | v1.1 |
+| `event_theme_mapping` | M:N 事件↔主题映射 | v1.1 |
+| `signals` | 周度三维信号评分 | v1.1 |
+| `trends_weekly` | 周度趋势加速度 | v1.1 |
+| `capital_flow` | 资本流向记录 | v1.1 |
+| `company_actions` | 事件→公司动作记录 | v1.2 ⭐ |
+| `company_weekly_summary` | 每公司每周汇总 | v1.2 ⭐ |
+| `weekly_snapshots` | 周报不可变快照（SHA256） | v1.2 |
+| `pipeline_runs` | Pipeline 执行日志 | v1.2 |
 
 ---
 
@@ -103,9 +176,16 @@ trend_tracker/
 pip install feedparser  # 仅 real pipeline 需要（RSS 解析）
 ```
 
-### 运行 Mock Pipeline
+### 初始化数据库
 
-使用内置的两周期模拟数据，完整走通 **Collect → Signal → Trend → Capital → Export** 全链路：
+```bash
+cd trend_tracker
+# 从零初始化（v1.1 → v1.2 迁移）
+sqlite3 db/trend_tracker.db < db/db_init_v1.1.sql
+sqlite3 db/trend_tracker.db < db/migrations/001_company_layer.sql
+```
+
+### 运行 Mock Pipeline
 
 ```bash
 cd trend_tracker
@@ -113,25 +193,43 @@ python pipeline_mock.py
 ```
 
 输出：
-- 初始化 SQLite 数据库（从 `db/db_init_v1.1.sql`）
-- 插入 2026-W22（15 个事件）和 2026-W23（15 个事件）模拟数据
-- 计算 8 主题 × 2 周 = 最多 16 条信号 + 趋势记录
-- 导出 `trend_data/weekly/2026-W23.json`
+- 两周期模拟数据（31 事件 × 16 company_actions）
+- 计算 8 主题 + 公司信号评分
+- 导出 `trend_data/weekly/2026-W23.json`（含 `company_actions` + `company_weekly_summary`）
 
 ### 运行 Real Pipeline
 
-从 arXiv、TechCrunch、GitHub 采集真实数据：
-
 ```bash
 cd trend_tracker
-python pipeline_real.py
+python pipeline_real.py    # 或 python pipeline_real_v1.2.py
 ```
 
 **⚠️ 注意事项：**
-- arXiv API 有速率限制（~1 req/3s），首次运行可能较慢
-- GitHub Trending 需要网络访问 https://github.com/trending
+- arXiv API 有速率限制（~1 req/3s），sandbox 环境可能 IP 级限流
+- GitHub Trending 需要网络访问
 - TechCrunch RSS 需要 `feedparser` 库
-- Reuters 数据源尚未集成（标记为 Warning）
+- Reuters 数据源尚未集成
+
+---
+
+## 版本
+
+| 项目 | 版本 |
+|------|------|
+| 当前版本 | MVP v1.2 |
+| Pipeline Version | v1.2 |
+| Scoring Version | v1.2 |
+| 数据库 Schema | v1.2（通过迁移 001） |
+
+### 迁移路径
+
+```
+v1.1 → v1.2: db/migrations/001_company_layer.sql
+  - ALTER companies 增加 6 列（description/founded_year/headquarters/...)
+  - 新增 company_actions 表
+  - 新增 company_weekly_summary 表
+  - 插入 15 家扩展公司
+```
 
 ---
 
@@ -139,19 +237,10 @@ python pipeline_real.py
 
 | 数据源 | 类型 | 状态 | 说明 |
 |--------|------|------|------|
-| arXiv API | 论文 | 🟢 可用 | 免费、无需 API Key，速率限制 ~1 req/3s |
+| arXiv API | 论文 | 🟡 受限 | 免费、速率限制 ~1 req/3s，sandbox IP 限流 |
 | TechCrunch RSS | 新闻 | 🟢 可用 | RSS 免费，需要 `feedparser` |
 | GitHub Trending | 仓库 | 🟢 可用 | 网页抓取，无需 API Key |
-| Reuters | 新闻 | 🔴 未集成 | 需 WebSearch 工具集成，当前占位 |
-
----
-
-## 版本
-
-- **当前版本**: MVP v1.1
-- **Pipeline Version**: v1.1
-- **Scoring Version**: v1.1
-- **数据库 Schema**: v1.1
+| Reuters | 新闻 | 🔴 未集成 | 需 WebSearch 工具集成 |
 
 ---
 
@@ -159,6 +248,7 @@ python pipeline_real.py
 
 详见 [GitHub Issues](https://github.com/haiyuliu/trend-tracker/issues)：
 
-1. **Company Layer Enhancement** — 完善公司维度分析，建立事件→公司→主题的关联
-2. **Theme Registry Enhancement** — 主题注册表扩展（从 8 → 12 主题）、父子主题演化支持
-3. **Snapshot Explainability Enhancement** — 周报快照增加可解释性字段（评分依据、关键事件引用）
+1. ✅ **Company Layer Enhancement** — 已完成于 v1.2
+2. **Theme Registry Enhancement** — 主题注册表扩展（8 → 12）、父子主题演化
+3. **Snapshot Explainability Enhancement** — 周报快照增加可解释性字段
+4. 真实周报接入日报/周报生成流程
