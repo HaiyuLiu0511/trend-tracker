@@ -51,16 +51,39 @@
 
 ---
 
-## v1.4 — Theme Registry Enhancement ⬜
+## v1.4 — Theme Registry Enhancement ✅
+
+**状态：** ✅ Completed (2026-06-02)
+
+主题注册表治理与别名规范化。
+
+- `theme_registry` 表（8 canonical themes，支持 ACTIVE/DEPRECATED/MERGED 生命周期）
+- `theme_aliases` 表（~40 别名规则，含 confidence 评分）
+- `theme_registry_mapper.py` — 主题规范化引擎（`load_registry` → `normalize_theme` → `stage_theme_registry_normalization`）
+- Pipeline 新增 Stage 3：Theme Registry Normalization
+- `docs/ARCHITECTURE.md` — 系统架构基线文档
+- **零新增主题**，**零评分模型变更**，**完全向后兼容**
+
+**验收清单：**
+- [x] Theme Registry 表创建成功
+- [x] 别名映射验证通过（Agentic AI → ai_agent 等 7 组测试用例）
+- [x] Pipeline Stage 3 规范化阶段集成通过
+- [x] ARCHITECTURE.md 基线文档完整
+- [x] 向后兼容验证通过（未知主题 pass-through）
+
+---
+
+## v1.5 — Observation Phase ⬜
 
 **状态：** ⬜ Planned
 
-主题注册表扩展与演化。
+数据积累与模式观察。
 
-- 主题数：8 → 12（新增 AI 安全、AI 教育、AI 医疗、AI 芯片设计）
-- 父子主题演化（子主题继承父主题信号权重）
-- 主题别名映射（同义主题归一化）
-- 主题激活/归档生命周期管理
+- 持续运行 Real Pipeline 收集真实周度数据
+- 验证评分模型在真实数据下的表现
+- 识别趋势分类边界情况
+- 积累驱动事件和可解释性数据以校准 impact_score
+- 为后续主题扩展和数据源扩展提供实证基础
 
 ---
 

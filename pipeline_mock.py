@@ -1,12 +1,12 @@
 """
-Trend Tracker MVP v1.3 — Mock Data Pipeline
-Adds Snapshot Explainability Layer.
+Trend Tracker MVP v1.4 — Mock Data Pipeline
+Adds Theme Registry normalization (Data Governance layer).
 
-Changes from v1.2:
-- Imports explainability_processor for driver event extraction
-- NEW stage_snapshot_explainability: extracts top drivers per theme
-- stage_export_weekly_json: adds "snapshot_explainability" block
-- Stages renumbered: 10 total (was 9)
+Changes from v1.3:
+- Imports theme_registry_mapper for alias→canonical normalization
+- NEW stage_theme_registry_normalization: normalizes all events before Signal calc
+- stage_export: adds "canonical_theme" field to theme_scores/trend_acceleration
+- Stages renumbered: 10 total (was 9 in v1.3 runner)
 """
 
 import sqlite3
@@ -20,6 +20,7 @@ sys_path = __import__('sys').path
 sys_path.insert(0, os.path.dirname(__file__))
 from processors.company_mapper import map_company_name_to_id
 from processors.explainability_processor import stage_snapshot_explainability
+from processors.theme_registry_mapper import stage_theme_registry_normalization
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'db', 'trend_tracker.db')
 EXPORT_DIR = os.path.join(os.path.dirname(__file__), 'trend_data', 'weekly')
@@ -179,6 +180,11 @@ def stage_collect(conn):
     print(f"  {company_action_count} company_actions written")
     return events_inserted
 
+# ============================================================================
+# Stage 1B: Theme Registry Normalization (NEW v1.4)
+# ============================================================================
+# Normalizes event primary_theme / event_theme_mapping to canonical forms.
+# Data Governance pass-through for mock data (all pre-mapped).
 
 # ============================================================================
 # Stage 2: Signal Calculation
@@ -470,7 +476,7 @@ def stage_export_weekly_json(conn, explainability_data=None):
         "meta": {
             "week_label": latest_week,
             "generated_at": datetime.now().isoformat(),
-            "pipeline_version": "v1.3",
+            "pipeline_version": "v1.4",
             "scoring_version": "v1.2",
             "event_count": cursor.execute(
                 'SELECT COUNT(*) FROM events WHERE week_label = ? AND noise_flag = 0',
@@ -479,7 +485,9 @@ def stage_export_weekly_json(conn, explainability_data=None):
         },
         "theme_scores": [
             {
-                "theme_id": r['theme_id'], "theme_name": r['theme_name'],
+                "theme_id": r['theme_id'],
+                "canonical_theme": r['theme_id'],  # v1.4: always canonical after registry normalization
+                "theme_name": r['theme_name'],
                 "theme_score": r['theme_score'], "capital_score": r['capital_score'],
                 "strategic_score": r['strategic_score'], "research_score": r['research_score'],
                 "signal_count": r['signal_count'], "data_quality": r['data_quality']
@@ -487,7 +495,9 @@ def stage_export_weekly_json(conn, explainability_data=None):
         ],
         "trend_acceleration": [
             {
-                "theme_id": r['theme_id'], "theme_name": r['theme_name'],
+                "theme_id": r['theme_id'],
+                "canonical_theme": r['theme_id'],  # v1.4
+                "theme_name": r['theme_name'],
                 "accel_4w_pct": r['accel_4w'], "trend_class": r['trend_class'],
                 "validation_class": r['validation_class']
             } for r in theme_data if r['accel_4w'] is not None
@@ -563,7 +573,7 @@ def stage_log_pipeline(conn, status, events_collected=0, events_filtered=0, erro
     conn.execute('''
         INSERT INTO pipeline_runs (run_id, pipeline_version, status, started_at,
             completed_at, error_log, events_collected, events_filtered, week_label)
-        VALUES (?, 'v1.3', ?, datetime('now'), datetime('now'), ?, ?, ?, ?)
+        VALUES (?, 'v1.4', ?, datetime('now'), datetime('now'), ?, ?, ?, ?)
     ''', (run_id, status, error, events_collected, events_filtered,
           sorted(ALL_MOCK_EVENTS.keys())[-1]))
     conn.commit()
@@ -622,7 +632,7 @@ def stage_verify(conn):
 # ============================================================================
 def run():
     print("=" * 60)
-    print("Trend Tracker MVP v1.3 — Mock Data Pipeline")
+    print("Trend Tracker MVP v1.4 — Mock Data Pipeline")
     print(f"Started: {datetime.now().isoformat()}")
     print("=" * 60)
 
@@ -630,13 +640,14 @@ def run():
     try:
         clear_pipeline_data(conn)
         events_count = stage_collect(conn)
+        # NEW v1.4: Theme Registry normalization
+        latest_week = sorted(ALL_MOCK_EVENTS.keys())[-1]
+        stage_theme_registry_normalization(conn, latest_week)
         stage_signal_calculation(conn)
         stage_trend_calculation(conn)
-        # NEW v1.3: Snapshot Explainability
-        latest_week = sorted(ALL_MOCK_EVENTS.keys())[-1]
         explainability_data = stage_snapshot_explainability(conn, latest_week)
         stage_capital_flow(conn)
-        stage_company_weekly_summary(conn)   # v1.2
+        stage_company_weekly_summary(conn)
         json_path = stage_export_weekly_json(conn, explainability_data)
         stage_log_pipeline(conn, 'completed', events_count, 0)
         ok = stage_verify(conn)

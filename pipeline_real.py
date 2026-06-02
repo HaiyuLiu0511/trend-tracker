@@ -1,12 +1,12 @@
 """
-Trend Tracker MVP v1.3 — Real Data Pipeline
-Adds Snapshot Explainability Layer.
+Trend Tracker MVP v1.4 — Real Data Pipeline
+Adds Theme Registry normalization layer (Data Governance).
 
-Changes from v1.2:
-- Imports explainability_processor for driver event extraction
-- NEW stage_snapshot_explainability: extracts top drivers per theme
-- stage_export: adds "snapshot_explainability" block to weekly.json
-- run(): steps renumbered 1-9 (was 1-8)
+Changes from v1.3:
+- Imports theme_registry_mapper for alias→canonical normalization
+- NEW stage_theme_registry_normalization: normalizes all events before Signal calc
+- stage_export: adds "canonical_theme" field to theme_scores/trend_acceleration
+- run(): steps renumbered 1-10 (was 1-9)
 """
 
 import sys
@@ -27,6 +27,7 @@ from collectors.github_collector import fetch_trending_repos
 from processors.theme_mapper import map_event_to_themes, get_theme_name
 from processors.company_mapper import map_company_name_to_id
 from processors.explainability_processor import stage_snapshot_explainability
+from processors.theme_registry_mapper import stage_theme_registry_normalization
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'db', 'trend_tracker.db')
 EXPORT_DIR = os.path.join(os.path.dirname(__file__), 'trend_data', 'weekly')
@@ -202,6 +203,13 @@ def stage_map_and_insert(conn, events: List[Dict], week_label: str) -> tuple:
         print(f"  {tid:25s}: {cnt}")
 
     return inserted, filtered
+
+# ============================================================================
+# Stage 2B: Theme Registry Normalization (NEW v1.4)
+# ============================================================================
+# Normalizes event primary_theme + event_theme_mapping entries to canonical
+# forms BEFORE Signal/Trend/Export layers consume them. Uses theme_registry +
+# theme_aliases tables for lookup. Data governance pass-through for MVP themes.
 
 # ============================================================================
 # Stage 3: Signal Calculation
@@ -449,7 +457,7 @@ def stage_company_weekly_summary(conn, week_label: str):
     print(f"[Company] {summary_count} company weekly summaries calculated")
 
 # ============================================================================
-# Stage 8: Export Weekly JSON (adds snapshot_explainability)
+# Stage 9: Export Weekly JSON (adds canonical_theme fields)
 # ============================================================================
 def stage_export(conn, week_label: str, data_warnings: List[str],
                  explainability_data: List[Dict] = None) -> str:
@@ -521,7 +529,7 @@ def stage_export(conn, week_label: str, data_warnings: List[str],
         "meta": {
             "week_label": week_label,
             "generated_at": datetime.now().isoformat(),
-            "pipeline_version": "v1.3",
+            "pipeline_version": "v1.4",
             "scoring_version": "v1.2",
             "event_count": total_events,
             "data_source": "real"
@@ -529,6 +537,7 @@ def stage_export(conn, week_label: str, data_warnings: List[str],
         "theme_scores": [
             {
                 "theme_id": r['theme_id'],
+                "canonical_theme": r['theme_id'],  # v1.4: always canonical after registry normalization
                 "theme_name": r['theme_name'],
                 "theme_score": r['theme_score'],
                 "capital_score": r['capital_score'],
@@ -541,6 +550,7 @@ def stage_export(conn, week_label: str, data_warnings: List[str],
         "trend_acceleration": [
             {
                 "theme_id": r['theme_id'],
+                "canonical_theme": r['theme_id'],  # v1.4
                 "theme_name": r['theme_name'],
                 "accel_4w_pct": r['accel_4w'],
                 "trend_class": r['trend_class'],
@@ -611,7 +621,7 @@ def stage_export(conn, week_label: str, data_warnings: List[str],
     conn.execute('''
         INSERT OR REPLACE INTO weekly_snapshots (snapshot_id, week_label, json_blob,
             scoring_version, checksum)
-        VALUES (?, ?, ?, 'v1.3', ?)
+        VALUES (?, ?, ?, 'v1.4', ?)
     ''', (snap_id, week_label, json_str, checksum))
     conn.commit()
 
@@ -650,7 +660,7 @@ def log_pipeline(conn, status, events_collected=0, events_filtered=0,
     conn.execute('''
         INSERT INTO pipeline_runs (run_id, pipeline_version, status, started_at,
             completed_at, error_log, events_collected, events_filtered, week_label)
-        VALUES (?, 'v1.3', ?, datetime('now'), datetime('now'), ?, ?, ?, ?)
+        VALUES (?, 'v1.4', ?, datetime('now'), datetime('now'), ?, ?, ?, ?)
     ''', (run_id, status, error, events_collected, events_filtered, week_label))
     conn.commit()
     return run_id
@@ -658,7 +668,7 @@ def log_pipeline(conn, status, events_collected=0, events_filtered=0,
 def run():
     week_label = get_current_week_label()
     print("=" * 60)
-    print(f"Trend Tracker MVP v1.3 — Real Data Pipeline")
+    print(f"Trend Tracker MVP v1.4 — Real Data Pipeline")
     print(f"Week: {week_label}")
     print(f"Started: {datetime.now().isoformat()}")
     print("=" * 60)
@@ -680,24 +690,28 @@ def run():
 
     try:
         # Step 1: Collect
-        print("\n[1/8] COLLECT")
+        print("\n[1/10] COLLECT")
         raw_events, collect_warnings = stage_collect_all()
         data_warnings.extend(collect_warnings)
         events_collected = len(raw_events)
 
         # Step 2: Map & Insert
-        print("\n[2/8] MAP & INSERT")
+        print("\n[2/10] MAP & INSERT")
         inserted, filtered = stage_map_and_insert(conn, raw_events, week_label)
         events_filtered = filtered
         if filtered > 0:
             data_warnings.append(f"{filtered} events filtered (no theme match)")
 
-        # Step 3: Signal
-        print("\n[3/8] SIGNAL CALCULATION")
+        # Step 3: Theme Registry Normalization (NEW v1.4)
+        print("\n[3/10] THEME REGISTRY NORMALIZATION")
+        stage_theme_registry_normalization(conn, week_label)
+
+        # Step 4: Signal
+        print("\n[4/10] SIGNAL CALCULATION")
         stage_signal_calculation(conn, week_label)
 
-        # Step 4: Trend
-        print("\n[4/9] TREND CALCULATION")
+        # Step 5: Trend
+        print("\n[5/10] TREND CALCULATION")
         stage_trend_calculation(conn, week_label)
         prev = conn.execute(
             'SELECT week_label FROM signals WHERE week_label < ? LIMIT 1',
@@ -705,24 +719,24 @@ def run():
         if not prev:
             data_warnings.append("First week: no prior data for acceleration comparison")
 
-        # Step 5: Snapshot Explainability (NEW v1.3)
-        print("\n[5/9] SNAPSHOT EXPLAINABILITY")
+        # Step 6: Snapshot Explainability
+        print("\n[6/10] SNAPSHOT EXPLAINABILITY")
         explainability_data = stage_snapshot_explainability(conn, week_label)
 
-        # Step 6: Capital Flow
-        print("\n[6/9] CAPITAL FLOW")
+        # Step 7: Capital Flow
+        print("\n[7/10] CAPITAL FLOW")
         stage_capital_flow(conn, week_label)
 
-        # Step 7: Company Weekly Summary
-        print("\n[7/9] COMPANY WEEKLY SUMMARY")
+        # Step 8: Company Weekly Summary
+        print("\n[8/10] COMPANY WEEKLY SUMMARY")
         stage_company_weekly_summary(conn, week_label)
 
-        # Step 8: Export
-        print("\n[8/9] EXPORT")
+        # Step 9: Export
+        print("\n[9/10] EXPORT")
         json_path = stage_export(conn, week_label, data_warnings, explainability_data)
 
-        # Step 9: Verify & Log
-        print("\n[9/9] VERIFY & LOG")
+        # Step 10: Verify & Log
+        print("\n[10/10] VERIFY & LOG")
         ok = verify(conn, week_label)
         log_pipeline(conn, 'completed', events_collected, events_filtered,
                      week_label=week_label)

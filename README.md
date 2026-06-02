@@ -1,6 +1,6 @@
 # Trend Tracker — AI 产业趋势追踪系统
 
-> **MVP v1.3** — 多源数据采集 → 趋势信号计算 + 公司维度 + 快照可解释性
+> **MVP v1.4** — 多源数据采集 → 趋势信号计算 + 公司维度 + 快照可解释性 + 主题注册表治理
 
 ## 项目目标
 
@@ -10,7 +10,7 @@
 
 ---
 
-## 已完成能力（MVP v1.3）
+## 已完成能力（MVP v1.4）
 
 | 模块 | 状态 | 说明 |
 |------|------|------|
@@ -23,6 +23,8 @@
 | **公司维度** ⭐ | ✅ v1.2 | 公司名称映射、公司动作记录、每周公司信号汇总 |
 | **周报导出** | ✅ 完成 | 结构化 `weekly.json`（含 `company_actions` + `company_weekly_summary` 区块）+ SHA256 校验快照 |
 | **Snapshot Explainability** ⭐ | ✅ v1.3 | 驱动事件提取、impact_score 评分、每主题 Top-N driver 列表 |
+| **Theme Registry** ⭐ | ✅ v1.4 | 主题注册表治理、别名→规范主题映射、Pipeline 阶段规范化 |
+| **System Architecture** ⭐ | ✅ v1.4 | ARCHITECTURE.md 系统基线文档 |
 | **Mock Pipeline** | ✅ 完成 | 两周期模拟数据完整走通全部计算链路 |
 | **Pipeline 日志** | ✅ 完成 | 每次运行记录到 `pipeline_runs` 表 |
 | **数据完整性校验** | ✅ 完成 | `verify()` 跨表一致性检查 |
@@ -133,6 +135,48 @@ EVENT_TYPE_SCORES: FUNDING_ROUND=3, PRODUCT_LAUNCH=4, ACQUISITION=4,
 
 ---
 
+## Theme Registry Enhancement ⭐ (v1.4 新增)
+
+### 设计目标
+
+在现有关键词规则引擎主题映射之上，增加 **主题注册表治理层**。确保所有流经 Pipeline 的 `theme_id` 在进入 Signal/Trend/Export 层之前被规范化为 Canonical Theme，防止多源分类或 LLM 分类引入的主题名称漂移。
+
+### 核心组件
+
+| 组件 | 说明 |
+|------|------|
+| `theme_registry` 表 | 规范主题登记表（8 个 canonical themes，支持 ACTIVE/DEPRECATED/MERGED 状态生命周期） |
+| `theme_aliases` 表 | 别名→规范主题映射表（~40 条别名规则，含 confidence 评分） |
+| `theme_registry_mapper.py` | 主题规范化引擎（`load_registry` → `normalize_theme` → `stage_theme_registry_normalization`） |
+| `002_theme_registry.sql` | v1.4 Schema 迁移脚本 |
+
+### 数据流（v1.4）
+
+```
+Events → Theme Mapper (keyword rules) → [ Theme Registry Normalizer ] → Signal Layer
+                                              ↑ v1.4 新增阶段
+```
+
+### 设计原则
+
+- **零新增主题** — 仅对 8 个现有主题做别名规范化，不引入新主题
+- **零评分模型变更** — 不影响信号计算和趋势加速度
+- **治理层无侵入** — 仅在所有主题映射完成后做一次规范化 pass-through
+- **向后兼容** — 对已规范主题是 no-op，未知主题做 pass-through
+
+### 别名示例
+
+| 别名 | Canonical Theme |
+|------|----------------|
+| Agentic AI | `ai_agent` |
+| Foundation Model / Large Language Model | `llm_frontier` |
+| GPU Computing / AI Chip | `compute_gpu` |
+| Video Generation / Text-to-Video | `ai_video` |
+| Embodied AI / Humanoid Robot | `robotics` |
+| AI Code Generation / AI Copilot | `ai_coding` |
+
+---
+
 ## Company Layer ⭐ (v1.2)
 
 ### 设计目标
@@ -212,17 +256,21 @@ trend_tracker/
 │   └── reuters_collector.py     # Reuters 预留
 ├── processors/
 │   ├── theme_mapper.py          # 关键词规则引擎 → 主题分类
+│   ├── theme_registry_mapper.py # 主题注册表规范化 (v1.4) ⭐
 │   ├── company_mapper.py        # 公司名称 → company_id 映射器 (v1.2)
 │   └── explainability_processor.py  # 快照可解释性处理器 (v1.3) ⭐
 ├── db/
 │   ├── db_init_v1.1.sql         # v1.1 完整 Schema（9 表 + 种子数据）
 │   ├── migrations/
-│   │   └── 001_company_layer.sql # v1.2 迁移脚本
+│   │   ├── 001_company_layer.sql  # v1.2 迁移脚本
+│   │   └── 002_theme_registry.sql # v1.4 迁移脚本 ⭐
 │   └── trend_tracker.db         # SQLite 运行时数据库（.gitignore）
+├── docs/
+│   └── ARCHITECTURE.md          # 系统架构基线文档 (v1.4) ⭐
 ├── trend_data/
 │   └── weekly/                  # 周报 JSON 导出（.gitignore）
-├── pipeline_mock.py             # Mock 数据 Pipeline（v1.3） ⭐
-├── pipeline_real.py             # 真实数据 Pipeline（v1.3，9 阶段） ⭐
+├── pipeline_mock.py             # Mock 数据 Pipeline（v1.4） ⭐
+├── pipeline_real.py             # 真实数据 Pipeline（v1.4，10 阶段） ⭐
 ├── tests/                       # 测试目录（预留）
 ├── calculators/                 # 计算器目录（预留）
 ├── export/                      # 导出目录（预留）
@@ -230,7 +278,7 @@ trend_tracker/
 └── README.md
 ```
 
-### 数据库 Schema（11 表）
+### 数据库 Schema（13 表）
 
 | 表名 | 用途 | 版本 |
 |------|------|------|
@@ -241,6 +289,8 @@ trend_tracker/
 | `signals` | 周度三维信号评分 | v1.1 |
 | `trends_weekly` | 周度趋势加速度 | v1.1 |
 | `capital_flow` | 资本流向记录 | v1.1 |
+| `theme_registry` | 规范主题登记表（治理生命周期） | v1.4 ⭐ |
+| `theme_aliases` | 别名→规范主题映射 | v1.4 ⭐ |
 | `company_actions` | 事件→公司动作记录 | v1.2 ⭐ |
 | `company_weekly_summary` | 每公司每周汇总 | v1.2 ⭐ |
 | `weekly_snapshots` | 周报不可变快照（SHA256） | v1.2 |
@@ -261,9 +311,10 @@ pip install feedparser  # 仅 real pipeline 需要（RSS 解析）
 
 ```bash
 cd trend_tracker
-# 从零初始化（v1.1 → v1.2 迁移）
+# 从零初始化（v1.1 → v1.2 → v1.4 迁移）
 sqlite3 db/trend_tracker.db < db/db_init_v1.1.sql
 sqlite3 db/trend_tracker.db < db/migrations/001_company_layer.sql
+sqlite3 db/trend_tracker.db < db/migrations/002_theme_registry.sql
 ```
 
 ### 运行 Mock Pipeline
@@ -286,19 +337,20 @@ cd trend_tracker
 python pipeline_real.py
 ```
 
-**Pipeline 阶段（v1.3，9 阶段）：**
+**Pipeline 阶段（v1.4，10 阶段）：**
 
 | Stage | 名称 | 说明 |
 |-------|------|------|
 | 1 | Collect | 三源采集 + 去重 |
 | 2 | Map & Insert | 主题映射 + 公司动作记录 |
-| 3 | Signal Calculation | 三维度信号评分 |
-| 4 | Trend Calculation | 周度趋势加速度 |
-| 5 | **Snapshot Explainability** ⭐ | 驱动事件提取 + impact_score |
-| 6 | Capital Flow | 资本流向聚合 |
-| 7 | Company Weekly Summary | 公司周度汇总 |
-| 8 | Export | JSON 导出 + SHA256 快照 |
-| 9 | Verify & Log | 跨表一致性校验 + 运行日志 |
+| 3 | **Theme Registry Normalization** ⭐ | 别名→规范主题归一化 |
+| 4 | Signal Calculation | 三维度信号评分 |
+| 5 | Trend Calculation | 周度趋势加速度 |
+| 6 | Snapshot Explainability | 驱动事件提取 + impact_score |
+| 7 | Capital Flow | 资本流向聚合 |
+| 8 | Company Weekly Summary | 公司周度汇总 |
+| 9 | Export | JSON 导出 + SHA256 快照 |
+| 10 | Verify & Log | 跨表一致性校验 + 运行日志 |
 
 **⚠️ 注意事项：**
 - arXiv API 有速率限制（~1 req/3s），sandbox 环境可能 IP 级限流
@@ -312,10 +364,10 @@ python pipeline_real.py
 
 | 项目 | 版本 |
 |------|------|
-| 当前版本 | MVP v1.3 |
-| Pipeline Version | v1.3 |
+| 当前版本 | MVP v1.4 |
+| Pipeline Version | v1.4 |
 | Scoring Version | v1.2 |
-| 数据库 Schema | v1.2（通过迁移 001） |
+| 数据库 Schema | v1.4（通过迁移 001+002） |
 
 ### 迁移路径
 
@@ -330,6 +382,12 @@ v1.2 → v1.3: 零 Schema 变更
   - 新增 processors/explainability_processor.py
   - pipeline_real.py Stage 5 新增 explainability
   - weekly.json 新增 snapshot_explainability 区块
+
+v1.3 → v1.4: 参照 db/migrations/002_theme_registry.sql
+  - 新增 theme_registry 表（8 canonical themes）
+  - 新增 theme_aliases 表（~40 alias mappings）
+  - 新增 processors/theme_registry_mapper.py
+  - pipeline_real.py 新增 Stage 3 Theme Registry Normalization
 ```
 
 ---
@@ -351,5 +409,6 @@ v1.2 → v1.3: 零 Schema 变更
 
 1. ✅ **Company Layer Enhancement** — 已完成于 v1.2
 2. ✅ **Snapshot Explainability Enhancement** — 已完成于 v1.3
-3. **Theme Registry Enhancement** — 主题注册表扩展（8 → 12）、父子主题演化
-4. 真实周报接入日报/周报生成流程
+3. ✅ **Theme Registry Enhancement** — 已完成于 v1.4
+4. **Observation Phase** — 数据积累与模式观察（v1.5 排期）
+5. 真实周报接入日报/周报生成流程
