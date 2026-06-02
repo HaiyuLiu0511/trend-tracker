@@ -1,13 +1,12 @@
 """
-Trend Tracker MVP v1.2 — Real Data Pipeline
-Adds Company Layer (company_actions + company_weekly_summary).
+Trend Tracker MVP v1.3 — Real Data Pipeline
+Adds Snapshot Explainability Layer.
 
-Changes from v1.1:
-- Imports company_mapper for company_name → company_id mapping
-- stage_map_and_insert: writes company_actions per event
-- NEW stage_company_weekly_summary: materializes company weekly signals
-- stage_export: adds "company_actions" block to weekly.json
-- run(): steps renumbered 1-8 (was 1-6)
+Changes from v1.2:
+- Imports explainability_processor for driver event extraction
+- NEW stage_snapshot_explainability: extracts top drivers per theme
+- stage_export: adds "snapshot_explainability" block to weekly.json
+- run(): steps renumbered 1-9 (was 1-8)
 """
 
 import sys
@@ -27,6 +26,7 @@ from collectors.techcrunch_collector import fetch_recent_articles
 from collectors.github_collector import fetch_trending_repos
 from processors.theme_mapper import map_event_to_themes, get_theme_name
 from processors.company_mapper import map_company_name_to_id
+from processors.explainability_processor import stage_snapshot_explainability
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'db', 'trend_tracker.db')
 EXPORT_DIR = os.path.join(os.path.dirname(__file__), 'trend_data', 'weekly')
@@ -346,7 +346,12 @@ def stage_trend_calculation(conn, week_label: str):
     print(f"[Trend] Trends calculated (prev week: {prev_week or 'none'})")
 
 # ============================================================================
-# Stage 5: Capital Flow
+# Stage 5: Snapshot Explainability (NEW v1.3)
+# ============================================================================
+# Uses explainability_processor module directly — no separate wrapper needed
+
+# ============================================================================
+# Stage 6: Capital Flow
 # ============================================================================
 def stage_capital_flow(conn, week_label: str):
     print("[Capital] Calculating flows...")
@@ -386,7 +391,7 @@ def stage_capital_flow(conn, week_label: str):
     print(f"[Capital] {len(themes)} themes with capital flows")
 
 # ============================================================================
-# Stage 6: Company Weekly Summary (NEW in v1.2)
+# Stage 7: Company Weekly Summary (v1.2)
 # ============================================================================
 def stage_company_weekly_summary(conn, week_label: str):
     """Materialize company_weekly_summary from company_actions."""
@@ -444,9 +449,10 @@ def stage_company_weekly_summary(conn, week_label: str):
     print(f"[Company] {summary_count} company weekly summaries calculated")
 
 # ============================================================================
-# Stage 7: Export Weekly JSON (adds company_actions block)
+# Stage 8: Export Weekly JSON (adds snapshot_explainability)
 # ============================================================================
-def stage_export(conn, week_label: str, data_warnings: List[str]) -> str:
+def stage_export(conn, week_label: str, data_warnings: List[str],
+                 explainability_data: List[Dict] = None) -> str:
     print("[Export] Generating weekly.json...")
     cursor = conn.cursor()
     os.makedirs(EXPORT_DIR, exist_ok=True)
@@ -515,7 +521,7 @@ def stage_export(conn, week_label: str, data_warnings: List[str]) -> str:
         "meta": {
             "week_label": week_label,
             "generated_at": datetime.now().isoformat(),
-            "pipeline_version": "v1.2",
+            "pipeline_version": "v1.3",
             "scoring_version": "v1.2",
             "event_count": total_events,
             "data_source": "real"
@@ -550,7 +556,9 @@ def stage_export(conn, week_label: str, data_warnings: List[str]) -> str:
                 "deal_count": r['event_count']
             } for r in capital_data
         ],
-        # --- NEW v1.2 ---
+        # --- NEW v1.3 ---
+        "snapshot_explainability": explainability_data or [],
+        # --- v1.2 ---
         "company_actions": [
             {
                 "company_id": r['company_id'],
@@ -603,7 +611,7 @@ def stage_export(conn, week_label: str, data_warnings: List[str]) -> str:
     conn.execute('''
         INSERT OR REPLACE INTO weekly_snapshots (snapshot_id, week_label, json_blob,
             scoring_version, checksum)
-        VALUES (?, ?, ?, 'v1.2', ?)
+        VALUES (?, ?, ?, 'v1.3', ?)
     ''', (snap_id, week_label, json_str, checksum))
     conn.commit()
 
@@ -642,7 +650,7 @@ def log_pipeline(conn, status, events_collected=0, events_filtered=0,
     conn.execute('''
         INSERT INTO pipeline_runs (run_id, pipeline_version, status, started_at,
             completed_at, error_log, events_collected, events_filtered, week_label)
-        VALUES (?, 'v1.2', ?, datetime('now'), datetime('now'), ?, ?, ?, ?)
+        VALUES (?, 'v1.3', ?, datetime('now'), datetime('now'), ?, ?, ?, ?)
     ''', (run_id, status, error, events_collected, events_filtered, week_label))
     conn.commit()
     return run_id
@@ -650,7 +658,7 @@ def log_pipeline(conn, status, events_collected=0, events_filtered=0,
 def run():
     week_label = get_current_week_label()
     print("=" * 60)
-    print(f"Trend Tracker MVP v1.2 — Real Data Pipeline")
+    print(f"Trend Tracker MVP v1.3 — Real Data Pipeline")
     print(f"Week: {week_label}")
     print(f"Started: {datetime.now().isoformat()}")
     print("=" * 60)
@@ -689,7 +697,7 @@ def run():
         stage_signal_calculation(conn, week_label)
 
         # Step 4: Trend
-        print("\n[4/8] TREND CALCULATION")
+        print("\n[4/9] TREND CALCULATION")
         stage_trend_calculation(conn, week_label)
         prev = conn.execute(
             'SELECT week_label FROM signals WHERE week_label < ? LIMIT 1',
@@ -697,20 +705,24 @@ def run():
         if not prev:
             data_warnings.append("First week: no prior data for acceleration comparison")
 
-        # Step 5: Capital Flow
-        print("\n[5/8] CAPITAL FLOW")
+        # Step 5: Snapshot Explainability (NEW v1.3)
+        print("\n[5/9] SNAPSHOT EXPLAINABILITY")
+        explainability_data = stage_snapshot_explainability(conn, week_label)
+
+        # Step 6: Capital Flow
+        print("\n[6/9] CAPITAL FLOW")
         stage_capital_flow(conn, week_label)
 
-        # Step 6: Company Weekly Summary (NEW)
-        print("\n[6/8] COMPANY WEEKLY SUMMARY")
+        # Step 7: Company Weekly Summary
+        print("\n[7/9] COMPANY WEEKLY SUMMARY")
         stage_company_weekly_summary(conn, week_label)
 
-        # Step 7: Export
-        print("\n[7/8] EXPORT")
-        json_path = stage_export(conn, week_label, data_warnings)
+        # Step 8: Export
+        print("\n[8/9] EXPORT")
+        json_path = stage_export(conn, week_label, data_warnings, explainability_data)
 
-        # Step 8: Verify & Log
-        print("\n[8/8] VERIFY & LOG")
+        # Step 9: Verify & Log
+        print("\n[9/9] VERIFY & LOG")
         ok = verify(conn, week_label)
         log_pipeline(conn, 'completed', events_collected, events_filtered,
                      week_label=week_label)

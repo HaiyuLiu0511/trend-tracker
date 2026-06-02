@@ -1,16 +1,16 @@
 # Trend Tracker — AI 产业趋势追踪系统
 
-> **MVP v1.2** — 多源数据采集 → 趋势信号计算 + 公司维度数据沉淀
+> **MVP v1.3** — 多源数据采集 → 趋势信号计算 + 公司维度 + 快照可解释性
 
 ## 项目目标
 
 构建 **AI 产业趋势量化追踪系统**，通过自动化数据采集、事件主题映射、多维度信号计算和趋势加速度分析，生成结构化的周度趋势报告（`weekly.json`），为 AI 产业研究与投资决策提供数据支撑。
 
-核心定位：回答 **"什么正在变化"（What Changed）**，而非仅仅汇总新闻事件。
+核心定位：回答 **"什么正在变化"（What Changed）** 以及 **"为什么变化"（Why It Changed）**，而非仅仅汇总新闻事件。
 
 ---
 
-## 已完成能力（MVP v1.2）
+## 已完成能力（MVP v1.3）
 
 | 模块 | 状态 | 说明 |
 |------|------|------|
@@ -20,8 +20,9 @@
 | **信号计算** | ✅ 完成 | 三维度评分：资本信号（45%）+ 战略信号（35%）+ 研究信号（20%） |
 | **趋势加速度** | ✅ 完成 | 周环比变化率，五档趋势分类（Accelerating/Rising/Stable/Cooling/Declining） |
 | **资本流向** | ✅ 完成 | 按主题聚合融资金额与份额 |
-| **公司维度** ⭐ | ✅ v1.2 新增 | 公司名称映射、公司动作记录、每周公司信号汇总 |
+| **公司维度** ⭐ | ✅ v1.2 | 公司名称映射、公司动作记录、每周公司信号汇总 |
 | **周报导出** | ✅ 完成 | 结构化 `weekly.json`（含 `company_actions` + `company_weekly_summary` 区块）+ SHA256 校验快照 |
+| **Snapshot Explainability** ⭐ | ✅ v1.3 | 驱动事件提取、impact_score 评分、每主题 Top-N driver 列表 |
 | **Mock Pipeline** | ✅ 完成 | 两周期模拟数据完整走通全部计算链路 |
 | **Pipeline 日志** | ✅ 完成 | 每次运行记录到 `pipeline_runs` 表 |
 | **数据完整性校验** | ✅ 完成 | `verify()` 跨表一致性检查 |
@@ -52,7 +53,87 @@ All sub-scores capped at 0–10
 
 ---
 
-## Company Layer ⭐ (v1.2 新增)
+## Snapshot Explainability Layer ⭐ (v1.3 新增)
+
+### 设计目标
+
+在现有的 Theme Score 和 Trend Acceleration 基础上，增加 **"驱动事件可解释性"** 能力。针对每个有信号的追踪主题，自动提取 Top 3-5 个驱动事件，计算每个事件的 `impact_score`，解释趋势的形成原因。
+
+### 核心组件
+
+| 组件 | 说明 |
+|------|------|
+| `explainability_processor.py` | 驱动事件提取器 + impact_score 计算引擎 |
+| `compute_impact_score()` | 0-10 分事件重要性评分（来源层级 × 事件类型 × 金额加成） |
+| `get_theme_drivers()` | 按主题提取 Top-N 驱动事件，按 impact_score 降序排列 |
+| `build_snapshot_explainability()` | 构建完整快照可解释性数据块 |
+| `stage_snapshot_explainability()` | Pipeline Stage 5，输出到 stdout 并返回数据供导出 |
+
+### Impact Score 公式
+
+```
+impact_score = min(10, base + amount_bonus)
+
+base = SOURCE_SCORES[source_tier] + EVENT_TYPE_SCORES[event_type]
+amount_bonus = min(5, log10(amount) - 6)  if amount > 0
+(FUNDING_ROUND 有明确金额时 +1 额外加成)
+
+SOURCE_SCORES: P0=8, P1=5, P2=2
+EVENT_TYPE_SCORES: FUNDING_ROUND=3, PRODUCT_LAUNCH=4, ACQUISITION=4,
+                   PRODUCT_BETA=3, RESEARCH_PAPER=2, PARTNERSHIP=2,
+                   INFRASTRUCTURE=2, OPEN_SOURCE=2
+```
+
+### 设计原则
+
+- **零 Schema 变更** — 仅读取已有 events + event_theme_mapping 表，无 DDL
+- **零评分模型变更** — 不影响现有 signal calculation 和 trend acceleration
+- **向后兼容** — explainability 字段为空列表时不影响下游消费者
+
+### Explainability 输出示例
+
+```json
+{
+  "snapshot_explainability": [
+    {
+      "theme": "ai_agent",
+      "theme_name": "AI Agent 自主代理",
+      "trend": "Accelerating",
+      "current_score": 5.04,
+      "drivers": [
+        {
+          "title": "Adept raises $800M for enterprise AI agents",
+          "source": "TechCrunch",
+          "published_at": "2026-06-02",
+          "impact_score": 10.0,
+          "event_type": "FUNDING_ROUND",
+          "url": "https://example.com/adept"
+        },
+        {
+          "title": "OpenAI launches Operator: AI agent that books flights and orders groceries",
+          "source": "Reuters",
+          "published_at": "2026-06-01",
+          "impact_score": 9.0,
+          "event_type": "PRODUCT_LAUNCH",
+          "url": "https://example.com/operator"
+        },
+        {
+          "title": "Salesforce integrates AI agents into CRM platform",
+          "source": "TechCrunch",
+          "published_at": "2026-06-03",
+          "impact_score": 4.0,
+          "event_type": "PARTNERSHIP",
+          "url": "https://example.com/salesforce-agent"
+        }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Company Layer ⭐ (v1.2)
 
 ### 设计目标
 
@@ -131,17 +212,17 @@ trend_tracker/
 │   └── reuters_collector.py     # Reuters 预留
 ├── processors/
 │   ├── theme_mapper.py          # 关键词规则引擎 → 主题分类
-│   └── company_mapper.py        # 公司名称 → company_id 映射器 ⭐
+│   ├── company_mapper.py        # 公司名称 → company_id 映射器 (v1.2)
+│   └── explainability_processor.py  # 快照可解释性处理器 (v1.3) ⭐
 ├── db/
 │   ├── db_init_v1.1.sql         # v1.1 完整 Schema（9 表 + 种子数据）
 │   ├── migrations/
-│   │   └── 001_company_layer.sql # v1.2 迁移脚本 ⭐
+│   │   └── 001_company_layer.sql # v1.2 迁移脚本
 │   └── trend_tracker.db         # SQLite 运行时数据库（.gitignore）
 ├── trend_data/
 │   └── weekly/                  # 周报 JSON 导出（.gitignore）
-├── pipeline_mock.py             # Mock 数据 Pipeline（v1.2，含 Company Layer） ⭐
-├── pipeline_real.py             # 真实数据 Pipeline（v1.2，8 阶段） ⭐
-├── pipeline_real_v1.2.py        # v1.2 真实 Pipeline（别名）
+├── pipeline_mock.py             # Mock 数据 Pipeline（v1.3） ⭐
+├── pipeline_real.py             # 真实数据 Pipeline（v1.3，9 阶段） ⭐
 ├── tests/                       # 测试目录（预留）
 ├── calculators/                 # 计算器目录（预留）
 ├── export/                      # 导出目录（预留）
@@ -195,14 +276,29 @@ python pipeline_mock.py
 输出：
 - 两周期模拟数据（31 事件 × 16 company_actions）
 - 计算 8 主题 + 公司信号评分
-- 导出 `trend_data/weekly/2026-W23.json`（含 `company_actions` + `company_weekly_summary`）
+- 提取每主题 Top driver events
+- 导出 `trend_data/weekly/2026-W23.json`（含 `company_actions` + `company_weekly_summary` + `snapshot_explainability`）
 
 ### 运行 Real Pipeline
 
 ```bash
 cd trend_tracker
-python pipeline_real.py    # 或 python pipeline_real_v1.2.py
+python pipeline_real.py
 ```
+
+**Pipeline 阶段（v1.3，9 阶段）：**
+
+| Stage | 名称 | 说明 |
+|-------|------|------|
+| 1 | Collect | 三源采集 + 去重 |
+| 2 | Map & Insert | 主题映射 + 公司动作记录 |
+| 3 | Signal Calculation | 三维度信号评分 |
+| 4 | Trend Calculation | 周度趋势加速度 |
+| 5 | **Snapshot Explainability** ⭐ | 驱动事件提取 + impact_score |
+| 6 | Capital Flow | 资本流向聚合 |
+| 7 | Company Weekly Summary | 公司周度汇总 |
+| 8 | Export | JSON 导出 + SHA256 快照 |
+| 9 | Verify & Log | 跨表一致性校验 + 运行日志 |
 
 **⚠️ 注意事项：**
 - arXiv API 有速率限制（~1 req/3s），sandbox 环境可能 IP 级限流
@@ -216,8 +312,8 @@ python pipeline_real.py    # 或 python pipeline_real_v1.2.py
 
 | 项目 | 版本 |
 |------|------|
-| 当前版本 | MVP v1.2 |
-| Pipeline Version | v1.2 |
+| 当前版本 | MVP v1.3 |
+| Pipeline Version | v1.3 |
 | Scoring Version | v1.2 |
 | 数据库 Schema | v1.2（通过迁移 001） |
 
@@ -229,6 +325,11 @@ v1.1 → v1.2: db/migrations/001_company_layer.sql
   - 新增 company_actions 表
   - 新增 company_weekly_summary 表
   - 插入 15 家扩展公司
+
+v1.2 → v1.3: 零 Schema 变更
+  - 新增 processors/explainability_processor.py
+  - pipeline_real.py Stage 5 新增 explainability
+  - weekly.json 新增 snapshot_explainability 区块
 ```
 
 ---
@@ -246,9 +347,9 @@ v1.1 → v1.2: db/migrations/001_company_layer.sql
 
 ## 后续计划
 
-详见 [GitHub Issues](https://github.com/haiyuliu/trend-tracker/issues)：
+详见 [GitHub Issues](https://github.com/HaiyuLiu0511/trend-tracker/issues) 和 [ROADMAP.md](./ROADMAP.md)：
 
 1. ✅ **Company Layer Enhancement** — 已完成于 v1.2
-2. **Theme Registry Enhancement** — 主题注册表扩展（8 → 12）、父子主题演化
-3. **Snapshot Explainability Enhancement** — 周报快照增加可解释性字段
+2. ✅ **Snapshot Explainability Enhancement** — 已完成于 v1.3
+3. **Theme Registry Enhancement** — 主题注册表扩展（8 → 12）、父子主题演化
 4. 真实周报接入日报/周报生成流程

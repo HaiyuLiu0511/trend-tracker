@@ -1,12 +1,12 @@
 """
-Trend Tracker MVP v1.2 — Mock Data Pipeline
-Adds Company Layer (company_actions + company_weekly_summary).
+Trend Tracker MVP v1.3 — Mock Data Pipeline
+Adds Snapshot Explainability Layer.
 
-Changes from v1.1:
-- stage_collect: writes company_actions per event
-- NEW stage_company_weekly_summary
-- stage_export_weekly_json: adds company_actions + company_weekly_summary blocks
-- stage_verify: checks new tables
+Changes from v1.2:
+- Imports explainability_processor for driver event extraction
+- NEW stage_snapshot_explainability: extracts top drivers per theme
+- stage_export_weekly_json: adds "snapshot_explainability" block
+- Stages renumbered: 10 total (was 9)
 """
 
 import sqlite3
@@ -19,6 +19,7 @@ from datetime import datetime, timedelta
 sys_path = __import__('sys').path
 sys_path.insert(0, os.path.dirname(__file__))
 from processors.company_mapper import map_company_name_to_id
+from processors.explainability_processor import stage_snapshot_explainability
 
 DB_PATH = os.path.join(os.path.dirname(__file__), 'db', 'trend_tracker.db')
 EXPORT_DIR = os.path.join(os.path.dirname(__file__), 'trend_data', 'weekly')
@@ -302,7 +303,12 @@ def stage_trend_calculation(conn):
 
 
 # ============================================================================
-# Stage 4: Capital Flow
+# Stage 4: Snapshot Explainability (NEW v1.3)
+# ============================================================================
+# Uses explainability_processor module directly
+
+# ============================================================================
+# Stage 5: Capital Flow
 # ============================================================================
 def stage_capital_flow(conn):
     print("[4/9] Calculating capital flow...")
@@ -344,7 +350,7 @@ def stage_capital_flow(conn):
 
 
 # ============================================================================
-# Stage 5: Company Weekly Summary (NEW v1.2)
+# Stage 6: Company Weekly Summary (v1.2)
 # ============================================================================
 def stage_company_weekly_summary(conn):
     print("[5/9] Calculating company weekly summaries...")
@@ -396,9 +402,9 @@ def stage_company_weekly_summary(conn):
 
 
 # ============================================================================
-# Stage 6: Export Weekly JSON
+# Stage 7: Export Weekly JSON (adds snapshot_explainability)
 # ============================================================================
-def stage_export_weekly_json(conn):
+def stage_export_weekly_json(conn, explainability_data=None):
     print("[6/9] Exporting weekly.json...")
     cursor = conn.cursor()
     os.makedirs(EXPORT_DIR, exist_ok=True)
@@ -437,7 +443,7 @@ def stage_export_weekly_json(conn):
         ORDER BY cf.funding_amount_usd DESC
     ''', (latest_week,)).fetchall()
 
-    # --- NEW v1.2 ---
+    # --- v1.2 (Company Layer) ---
     # Company actions
     company_actions_data = cursor.execute('''
         SELECT ca.company_id, c.company_name, c.ticker,
@@ -464,7 +470,7 @@ def stage_export_weekly_json(conn):
         "meta": {
             "week_label": latest_week,
             "generated_at": datetime.now().isoformat(),
-            "pipeline_version": "v1.2",
+            "pipeline_version": "v1.3",
             "scoring_version": "v1.2",
             "event_count": cursor.execute(
                 'SELECT COUNT(*) FROM events WHERE week_label = ? AND noise_flag = 0',
@@ -493,6 +499,9 @@ def stage_export_weekly_json(conn):
                 "deal_count": r['event_count']
             } for r in capital_data
         ],
+        # --- NEW v1.3 ---
+        "snapshot_explainability": explainability_data or [],
+        # --- v1.2 ---
         "company_actions": [
             {
                 "company_id": r['company_id'], "company_name": r['company_name'],
@@ -546,7 +555,7 @@ def stage_export_weekly_json(conn):
 
 
 # ============================================================================
-# Stage 7: Log Pipeline
+# Stage 8: Log Pipeline
 # ============================================================================
 def stage_log_pipeline(conn, status, events_collected=0, events_filtered=0, error=None):
     print("[7/9] Logging pipeline run...")
@@ -554,7 +563,7 @@ def stage_log_pipeline(conn, status, events_collected=0, events_filtered=0, erro
     conn.execute('''
         INSERT INTO pipeline_runs (run_id, pipeline_version, status, started_at,
             completed_at, error_log, events_collected, events_filtered, week_label)
-        VALUES (?, 'v1.2', ?, datetime('now'), datetime('now'), ?, ?, ?, ?)
+        VALUES (?, 'v1.3', ?, datetime('now'), datetime('now'), ?, ?, ?, ?)
     ''', (run_id, status, error, events_collected, events_filtered,
           sorted(ALL_MOCK_EVENTS.keys())[-1]))
     conn.commit()
@@ -562,7 +571,7 @@ def stage_log_pipeline(conn, status, events_collected=0, events_filtered=0, erro
 
 
 # ============================================================================
-# Stage 8: Verify
+# Stage 9: Verify
 # ============================================================================
 def stage_verify(conn):
     print("[8/9] Verifying data integrity...")
@@ -613,7 +622,7 @@ def stage_verify(conn):
 # ============================================================================
 def run():
     print("=" * 60)
-    print("Trend Tracker MVP v1.2 — Mock Data Pipeline")
+    print("Trend Tracker MVP v1.3 — Mock Data Pipeline")
     print(f"Started: {datetime.now().isoformat()}")
     print("=" * 60)
 
@@ -623,9 +632,12 @@ def run():
         events_count = stage_collect(conn)
         stage_signal_calculation(conn)
         stage_trend_calculation(conn)
+        # NEW v1.3: Snapshot Explainability
+        latest_week = sorted(ALL_MOCK_EVENTS.keys())[-1]
+        explainability_data = stage_snapshot_explainability(conn, latest_week)
         stage_capital_flow(conn)
-        stage_company_weekly_summary(conn)   # NEW v1.2
-        json_path = stage_export_weekly_json(conn)
+        stage_company_weekly_summary(conn)   # v1.2
+        json_path = stage_export_weekly_json(conn, explainability_data)
         stage_log_pipeline(conn, 'completed', events_count, 0)
         ok = stage_verify(conn)
 
