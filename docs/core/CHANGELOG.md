@@ -87,6 +87,24 @@
 
 ## Entries
 
+### [Governance Migration] - 2026-07-08
+
+#### Added
+- `docs/core/ENGINEERING_GOVERNANCE.md` — Engineering Governance V1 (9 sub-items: Core Philosophy, Architecture Principles, Development Standard, AEW, Quality Gates, Documentation Governance, Git Workflow, Repository Structure, Artifact Management)
+- `docs/core/IMPLEMENTATION_ROADMAP.md` — Implementation Roadmap V1 (Phase 1-11 with current progress annotations)
+
+#### Changed
+- `docs/core/GOVERNANCE.md` — Updated governance framework overview to reference ENGINEERING_GOVERNANCE.md and IMPLEMENTATION_ROADMAP.md; added EVIDENCE_LAYER.md to related documents
+- `docs/README.md` — Updated core documentation table (11 docs), cross-reference map, and developer reference order to include new governance docs
+
+#### Affected Documents
+- `docs/core/ENGINEERING_GOVERNANCE.md` — New (Engineering Governance V1, 9 sub-items)
+- `docs/core/IMPLEMENTATION_ROADMAP.md` — New (Phase 1-11 roadmap with progress)
+- `docs/core/GOVERNANCE.md` — Modified (governance framework overview + related documents)
+- `docs/README.md` — Modified (navigation table + cross-reference map + developer reference)
+
+---
+
 ### [Architecture Baseline Migration] - 2026-07-08
 
 #### Added

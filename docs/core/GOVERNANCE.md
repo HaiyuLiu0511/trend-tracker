@@ -65,7 +65,20 @@
 ## Governance Framework Overview
 
 ```
-GOVERNANCE.md（本文件）
+GOVERNANCE.md（本文件 — 治理入口）
+├── Engineering Governance V1（工程治理）
+│   └── 引用：ENGINEERING_GOVERNANCE.md（同目录）
+│       ├── Core Philosophy V2
+│       ├── Architecture Principles V1
+│       ├── Development Standard
+│       ├── Agent Engineering Workflow (AEW)
+│       ├── Quality Gates
+│       ├── Documentation Governance V1
+│       ├── Git Workflow
+│       ├── Repository Structure
+│       └── Artifact Management
+├── Implementation Roadmap V1（实施路线图）
+│   └── 引用：IMPLEMENTATION_ROADMAP.md（同目录）
 ├── Architecture Governance（架构治理）
 │   └── Architecture Freeze 规则
 ├── Data Governance（数据治理）
@@ -201,8 +214,11 @@ Provider 治理规则引用：`~/.workbuddy/frameworks/PROVIDER_ROUTER_GOVERNANC
 
 - [README.md](./README.md) — 文档体系入口
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — 架构设计（架构治理对象）
+- [ENGINEERING_GOVERNANCE.md](./ENGINEERING_GOVERNANCE.md) — Engineering Governance V1（工程治理完整定义）
+- [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) — Implementation Roadmap V1（Phase 1-11 执行计划）
 - [REPORT_DESIGN.md](./REPORT_DESIGN.md) — 报告设计（报告质量治理）
 - [DATA_SOURCE.md](../provider/DATA_SOURCE.md) — 数据源注册表（数据治理实施）
+- [EVIDENCE_LAYER.md](../evidence/EVIDENCE_LAYER.md) — 证据层规范（证据治理）
 - `~/.workbuddy/frameworks/DATA_GOVERNANCE.md` — 数据治理详细规则（外部引用）
 - `~/.workbuddy/frameworks/METHODOLOGY_GOVERNANCE.md` — 方法论治理详细规则（外部引用）
 - `~/.workbuddy/frameworks/PROVIDER_ROUTER_GOVERNANCE.md` — Provider 治理详细规则（外部引用）

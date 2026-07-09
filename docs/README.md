@@ -18,6 +18,8 @@ This is the single entry point for all documentation. Any new Agent should start
 | [ARCHITECTURE.md](./core/ARCHITECTURE.md) | Five-layer architecture, layer responsibilities, interfaces | Frozen |
 | [RESEARCH_SYSTEM.md](./core/RESEARCH_SYSTEM.md) | Knowledge Flow, cognitive accumulation mechanism | Frozen |
 | [GOVERNANCE.md](./core/GOVERNANCE.md) | Governance framework: architecture, data, methodology, provider, visual | Frozen |
+| [ENGINEERING_GOVERNANCE.md](./core/ENGINEERING_GOVERNANCE.md) | Engineering Governance V1: Core Philosophy, Architecture Principles, Development Standard, AEW, Quality Gates, Documentation Governance, Git Workflow, Repository Structure, Artifact Management | Frozen |
+| [IMPLEMENTATION_ROADMAP.md](./core/IMPLEMENTATION_ROADMAP.md) | Implementation Roadmap V1: Phase 1-11 execution plan with current progress | Frozen |
 | [REPORT_DESIGN.md](./core/REPORT_DESIGN.md) | Report design principles: structure, visual, evidence, methodology | Frozen |
 | [AGENT_ONBOARDING.md](./core/AGENT_ONBOARDING.md) | New Agent onboarding guide and required reading list | Frozen |
 | [REFACTOR_BACKLOG.md](./core/REFACTOR_BACKLOG.md) | Refactor backlog (8 items from Observation Phase) | Populated |
@@ -54,6 +56,8 @@ README.md (this file — entry point)
 │   ├── core/RESEARCH_SYSTEM.md (how knowledge flows)
 │   └── core/REFACTOR_BACKLOG.md (known architecture issues)
 ├── core/GOVERNANCE.md (governance rules)
+│   ├── core/ENGINEERING_GOVERNANCE.md (engineering governance V1 — 9 sub-items)
+│   ├── core/IMPLEMENTATION_ROADMAP.md (implementation phases 1-11)
 │   ├── provider/DATA_SOURCE.md (data source governance)
 │   └── evidence/EVIDENCE_LAYER.md (evidence governance)
 ├── core/AGENT_ONBOARDING.md (how to onboard new Agents)
@@ -83,9 +87,11 @@ README.md (this file — entry point)
 **Developer reference order:**
 
 1. `core/ARCHITECTURE.md` — confirm layer responsibilities
-2. `core/REFACTOR_BACKLOG.md` — understand current issues
-3. `provider/DATA_SOURCE.md` — confirm data source rules
-4. `core/GOVERNANCE.md` — confirm compliance requirements
+2. `core/ENGINEERING_GOVERNANCE.md` — confirm engineering governance rules
+3. `core/IMPLEMENTATION_ROADMAP.md` — confirm current phase and next steps
+4. `core/REFACTOR_BACKLOG.md` — understand current issues
+5. `provider/DATA_SOURCE.md` — confirm data source rules
+6. `core/GOVERNANCE.md` — confirm compliance requirements
 
 ---
 
