@@ -87,6 +87,16 @@
 
 ## Entries
 
+### [Repository Identity Migration] - 2026-07-09
+
+#### Changed
+- `README.md` (repository root) — Replaced Trend Tracker v1.4 README with Personal Investment Research System identity. New README includes: system mission, five-layer architecture overview, evolution story from Trend Tracker, legacy mapping summary, knowledge assets, repository structure, current implementation phase, quick-start guide, and governance references. All 18 cross-references validated.
+
+#### Affected Documents
+- `README.md` — Modified (repository identity transformation)
+
+---
+
 ### [Governance Migration] - 2026-07-08
 
 #### Added

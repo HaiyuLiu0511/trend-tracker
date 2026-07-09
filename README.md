@@ -1,362 +1,196 @@
-# Trend Tracker — AI 产业趋势追踪系统
+# Personal Investment Research System
 
-> **MVP v1.4** — 多源数据采集 → 趋势信号计算 + 公司维度 + 快照可解释性 + 主题注册表治理
-
-## 项目目标
-
-构建 **AI 产业趋势量化追踪系统**，通过自动化数据采集、事件主题映射、多维度信号计算和趋势加速度分析，生成结构化的周度趋势报告（`weekly.json`），为 AI 产业研究与投资决策提供数据支撑。
-
-核心定位：回答 **"什么正在变化"（What Changed）** 以及 **"为什么变化"（Why It Changed）**，而非仅仅汇总新闻事件。
+> **一个能够不断积累投资认知的研究系统，而不是单纯生成日报的工具。**
 
 ---
 
-## 已完成能力（MVP v1.4）
+## 系统使命
 
-| 模块 | 状态 | 说明 |
+构建 **认知积累型** 投资研究系统，支持从事件解读 → 行业框架 → 公司决策 → 知识演化的完整链路。
+
+核心差异：
+- 日报是输出（Output），不是目标
+- 认知积累（Knowledge Asset）是核心资产
+- 报告是副产品，认知是目标
+
+> 详见 [MISSION.md](./docs/core/MISSION.md)
+
+---
+
+## 五层架构
+
+```
+Layer 1: Event Layer          → Daily Briefing（每日简报）
+Layer 2: Research Navigator   → Research Terminal（研究终端）
+Layer 3: Industry Framework   → Industry Research（行业研究）
+Layer 4: Decision Support     → Company Research（公司研究）
+Layer 5: Knowledge Evolution  → Monthly Outlook（月度展望）
+```
+
+| 层级 | 名称 | 职责 | 交付物 |
+|------|------|------|--------|
+| Layer 1 | Event Layer | 每日信息摄入 + 事件标记 | Daily Briefing Report |
+| Layer 2 | Research Navigator | 主题/公司入口 + 快速导航 | Research Terminal Dashboard |
+| Layer 3 | Industry Framework | 行业分析框架 + 认知沉淀 | Industry Framework Doc |
+| Layer 4 | Decision Support | 公司深度研究 + 投资决策支持 | Company Research Report |
+| Layer 5 | Knowledge Evolution | 月度认知演化 + 投资地图更新 | Monthly Outlook Report |
+
+**架构原则：**
+
+1. One Layer = One Responsibility — 每层只解决一类问题
+2. One Tab = One Question — 每个 Tab 只回答一个核心问题
+3. Reports are outputs. Knowledge is the asset. — 报告是副产品，认知积累是目标
+4. Strict Layer Ordering — 上层必须建立在下层基础上
+5. GitHub = Single Source of Truth — 所有交付物同步至 GitHub
+
+> 详见 [ARCHITECTURE.md](./docs/core/ARCHITECTURE.md)
+
+---
+
+## 系统演化
+
+### 从 Trend Tracker 到 Personal Investment Research System
+
+本仓库的前身是 **Trend Tracker v1.4** — 一个 AI 产业趋势追踪系统（MVP v1.4），通过多源数据采集、事件主题映射、多维度信号计算和趋势加速度分析，生成结构化周度趋势报告。
+
+2026-07-06，Observation Phase 结束后，系统架构冻结并升级为 **Personal Investment Research System** — 从单一趋势追踪工具演化为五层认知积累研究系统。
+
+**Trend Tracker 不是被废弃的系统，而是 Personal Investment Research System 的第一个完整 Domain（Layer 1: Daily Briefing 的前身）。**
+
+### Legacy Mapping
+
+Trend Tracker 的 18 个组件已根据演化路径分类：
+
+| 演化路径 | 数量 | 含义 |
+|---------|------|------|
+| EVOLVE | 9 | 代码模式/知识资产可直接复用，将在未来实现阶段重构为 `src/` 模块 |
+| REFERENCE | 6 | 架构概念/模式有参考价值，代码不直接复用 |
+| REPLACED | 2 | 功能已被新仓库文档完全取代 |
+| OBSOLETE | 1 | 新架构中无对应项 |
+
+> 详见 [archive/legacy-trend-tracker/LEGACY_MAPPING.md](./archive/legacy-trend-tracker/LEGACY_MAPPING.md)
+
+### 知识资产
+
+以下知识资产嵌入在 Trend Tracker 遗留代码中，构建新模块时必须参考：
+
+| 资产 | 来源 | 说明 |
 |------|------|------|
-| **多源数据采集** | ✅ 完成 | arXiv（论文）、TechCrunch（RSS）、GitHub Trending（API）三源采集，Reuters 预留 |
-| **事件去重** | ✅ 完成 | 基于标题归一化的交叉源去重 |
-| **主题映射** | ✅ 完成 | 关键词规则引擎，8 大主题自动分类 |
-| **信号计算** | ✅ 完成 | 三维度评分：资本信号（45%）+ 战略信号（35%）+ 研究信号（20%） |
-| **趋势加速度** | ✅ 完成 | 周环比变化率，五档趋势分类（Accelerating/Rising/Stable/Cooling/Declining） |
-| **资本流向** | ✅ 完成 | 按主题聚合融资金额与份额 |
-| **公司维度** ⭐ | ✅ v1.2 | 公司名称映射、公司动作记录、每周公司信号汇总 |
-| **周报导出** | ✅ 完成 | 结构化 `weekly.json`（含 `company_actions` + `company_weekly_summary` 区块）+ SHA256 校验快照 |
-| **Snapshot Explainability** ⭐ | ✅ v1.3 | 驱动事件提取、impact_score 评分、每主题 Top-N driver 列表 |
-| **Theme Registry** ⭐ | ✅ v1.4 | 主题注册表治理、别名→规范主题映射、Pipeline 阶段规范化 |
-| **System Architecture** ⭐ | ✅ v1.4 | ARCHITECTURE.md 系统基线文档 |
-| **Mock Pipeline** | ✅ 完成 | 两周期模拟数据完整走通全部计算链路 |
-| **Pipeline 日志** | ✅ 完成 | 每次运行记录到 `pipeline_runs` 表 |
-| **数据完整性校验** | ✅ 完成 | `verify()` 跨表一致性检查 |
-
-### 评分模型
-
-```
-Theme Score = Capital × 0.45 + Strategic × 0.35 + Research × 0.20
-
-Capital Score:   log10(funding) 对数缩放 + 事件计数
-Strategic Score: 产品发布/合作/基础设施事件计数 × 2.5
-Research Score:  论文事件计数 × 3.0
-All sub-scores capped at 0–10
-```
-
-### 8 大追踪主题
-
-| Theme ID | 中文名 | 覆盖范围 |
-|----------|--------|---------|
-| `llm_frontier` | LLM 前沿模型 | GPT-5, Claude, Gemini, Llama 等旗舰模型 |
-| `ai_agent` | AI Agent 自主代理 | Agent 框架、工具使用、多步推理 |
-| `inference_compute` | 推理计算 | 推理优化、芯片、边缘推理 |
-| `ai_coding` | AI 编程 | Copilot, Devin, Cursor, 代码生成 |
-| `compute_gpu` | 算力与芯片 | GPU/TPU 供应、数据中心建设 |
-| `ai_video` | AI 视频生成 | 文生视频、视频编辑、虚拟人 |
-| `robotics` | 机器人 | 人形机器人、具身智能 |
-| `ai_infrastructure` | AI 基础设施 | 向量数据库、MLOps、模型部署 |
+| 8 主题分类体系 | `processors/theme_mapper.py` | AI 产业 8 大主题分类关键词 |
+| 公司别名映射表 | `processors/company_mapper.py` | 规范公司名 → 别名映射 |
+| Impact 评分权重 | `processors/explainability_processor.py` | SOURCE_SCORES, EVENT_TYPE_SCORES 权重表 |
+| 主题规范化规则 | `processors/theme_registry_mapper.py` | 别名 → 规范主题映射 |
+| Evidence Layer 模式 | `scripts/evidence_layer.py`（本地） | 来源追踪、置信度评分、证据链 |
+| 数据库实体模型 | `db/db_init_v1.1.sql` | Events, themes, companies 实体关系 |
 
 ---
 
-## Snapshot Explainability Layer ⭐ (v1.3 新增)
-
-### 设计目标
-
-在现有的 Theme Score 和 Trend Acceleration 基础上，增加 **"驱动事件可解释性"** 能力。针对每个有信号的追踪主题，自动提取 Top 3-5 个驱动事件，计算每个事件的 `impact_score`，解释趋势的形成原因。
-
-### 核心组件
-
-| 组件 | 说明 |
-|------|------|
-| `explainability_processor.py` | 驱动事件提取器 + impact_score 计算引擎 |
-| `compute_impact_score()` | 0-10 分事件重要性评分（来源层级 × 事件类型 × 金额加成） |
-| `get_theme_drivers()` | 按主题提取 Top-N 驱动事件，按 impact_score 降序排列 |
-| `build_snapshot_explainability()` | 构建完整快照可解释性数据块 |
-| `stage_snapshot_explainability()` | Pipeline Stage 5，输出到 stdout 并返回数据供导出 |
-
-### Impact Score 公式
+## 仓库结构
 
 ```
-impact_score = min(10, base + amount_bonus)
-
-base = SOURCE_SCORES[source_tier] + EVENT_TYPE_SCORES[event_type]
-amount_bonus = min(5, log10(amount) - 6)  if amount > 0
-(FUNDING_ROUND 有明确金额时 +1 额外加成)
-
-SOURCE_SCORES: P0=8, P1=5, P2=2
-EVENT_TYPE_SCORES: FUNDING_ROUND=3, PRODUCT_LAUNCH=4, ACQUISITION=4,
-                   PRODUCT_BETA=3, RESEARCH_PAPER=2, PARTNERSHIP=2,
-                   INFRASTRUCTURE=2, OPEN_SOURCE=2
-```
-
-### 设计原则
-
-- **零 Schema 变更** — 仅读取已有 events + event_theme_mapping 表，无 DDL
-- **零评分模型变更** — 不影响现有 signal calculation 和 trend acceleration
-- **向后兼容** — explainability 字段为空列表时不影响下游消费者
-
-### Explainability 输出示例
-
-```json
-{
-  "snapshot_explainability": [
-    {
-      "theme": "ai_agent",
-      "theme_name": "AI Agent 自主代理",
-      "trend": "Accelerating",
-      "current_score": 5.04,
-      "drivers": [
-        {
-          "title": "Adept raises $800M for enterprise AI agents",
-          "source": "TechCrunch",
-          "published_at": "2026-06-02",
-          "impact_score": 10.0,
-          "event_type": "FUNDING_ROUND",
-          "url": "https://example.com/adept"
-        },
-        {
-          "title": "OpenAI launches Operator: AI agent that books flights and orders groceries",
-          "source": "Reuters",
-          "published_at": "2026-06-01",
-          "impact_score": 9.0,
-          "event_type": "PRODUCT_LAUNCH",
-          "url": "https://example.com/operator"
-        },
-        {
-          "title": "Salesforce integrates AI agents into CRM platform",
-          "source": "TechCrunch",
-          "published_at": "2026-06-03",
-          "impact_score": 4.0,
-          "event_type": "PARTNERSHIP",
-          "url": "https://example.com/salesforce-agent"
-        }
-      ]
-    }
-  ]
-}
-```
-
----
-
-## Theme Registry Enhancement ⭐ (v1.4 新增)
-
-### 设计目标
-
-在现有关键词规则引擎主题映射之上，增加 **主题注册表治理层**。确保所有流经 Pipeline 的 `theme_id` 在进入 Signal/Trend/Export 层之前被规范化为 Canonical Theme，防止多源分类或 LLM 分类引入的主题名称漂移。
-
-### 核心组件
-
-| 组件 | 说明 |
-|------|------|
-| `theme_registry` 表 | 规范主题登记表（8 个 canonical themes，支持 ACTIVE/DEPRECATED/MERGED 状态生命周期） |
-| `theme_aliases` 表 | 别名→规范主题映射表（~40 条别名规则，含 confidence 评分） |
-| `theme_registry_mapper.py` | 主题规范化引擎（`load_registry` → `normalize_theme` → `stage_theme_registry_normalization`） |
-| `002_theme_registry.sql` | v1.4 Schema 迁移脚本 |
-
-### 数据流（v1.4）
-
-```
-Events → Theme Mapper (keyword rules) → [ Theme Registry Normalizer ] → Signal Layer
-                                              ↑ v1.4 新增阶段
-```
-
-### 设计原则
-
-- **零新增主题** — 仅对 8 个现有主题做别名规范化，不引入新主题
-- **零评分模型变更** — 不影响信号计算和趋势加速度
-- **治理层无侵入** — 仅在所有主题映射完成后做一次规范化 pass-through
-- **向后兼容** — 对已规范主题是 no-op，未知主题做 pass-through
-
-### 别名示例
-
-| 别名 | Canonical Theme |
-|------|----------------|
-| Agentic AI | `ai_agent` |
-| Foundation Model / Large Language Model | `llm_frontier` |
-| GPU Computing / AI Chip | `compute_gpu` |
-| Video Generation / Text-to-Video | `ai_video` |
-| Embodied AI / Humanoid Robot | `robotics` |
-| AI Code Generation / AI Copilot | `ai_coding` |
-
----
-
-## Company Layer ⭐ (v1.2)
-
-### 设计目标
-
-在不破坏 MVP v1.1 现有功能的前提下，增加 **公司维度数据沉淀能力**。每条事件如果在公司注册表中匹配到对应公司，则自动写入公司动作记录，并汇总为每周公司信号评分。
-
-### 核心组件
-
-| 组件 | 说明 |
-|------|------|
-| `companies` 表 | 公司注册表（12 列，含描述/成立年份/总部/行业标签），覆盖 23 家关键 AI 公司 |
-| `company_actions` 表 | 事件→公司动作记录（每条事件可能写入一条 `company_action`） |
-| `company_weekly_summary` 表 | 物化视图：每公司每周汇总（动作数、融资额、信号评分） |
-| `company_mapper.py` | 公司名称→`company_id` 映射器（别名表 + 数据库多级匹配） |
-
-### `weekly.json` 新增区块
-
-```json
-{
-  "company_actions": [
-    {
-      "company_id": "openai",
-      "company_name": "OpenAI",
-      "ticker": null,
-      "action_type": "PRODUCT_LAUNCH",
-      "action_date": "2026-06-01",
-      "theme_id": "ai_agent",
-      "amount_usd": null,
-      "description": "OpenAI launches Operator...",
-      "source_tier": "P1"
-    }
-  ],
-  "company_weekly_summary": [
-    {
-      "company_id": "openai",
-      "company_name": "OpenAI",
-      "ticker": null,
-      "primary_theme": "llm_frontier",
-      "action_count": 2,
-      "funding_usd": 0,
-      "launch_count": 2,
-      "research_count": 0,
-      "signal_score": 5.0
-    }
-  ]
-}
-```
-
-### 数据流
-
-```
-Events (company_name=raw) → company_mapper.py → companies.company_id
-    ↓
-company_actions (每个可匹配事件一条)
-    ↓
-stage_company_weekly_summary (按周聚合)
-    ↓
-weekly.json { company_actions + company_weekly_summary }
-```
-
-### 覆盖率
-
-- 种子公司：23 家（8 MVP + 15 扩展）
-- 别名映射：~65 条别名规则
-- 匹配方式：精确别名 → 数据库名称查询 → 模糊子串匹配
-
----
-
-## 项目目录结构
-
-```
-trend_tracker/
-├── collectors/                  # 数据采集器
-│   ├── arxiv_collector.py       # arXiv API 论文采集
-│   ├── github_collector.py      # GitHub Trending 仓库采集
-│   ├── techcrunch_collector.py  # TechCrunch RSS 文章采集
-│   └── reuters_collector.py     # Reuters 预留
-├── processors/
-│   ├── theme_mapper.py          # 关键词规则引擎 → 主题分类
-│   ├── theme_registry_mapper.py # 主题注册表规范化 (v1.4) ⭐
-│   ├── company_mapper.py        # 公司名称 → company_id 映射器 (v1.2)
-│   └── explainability_processor.py  # 快照可解释性处理器 (v1.3) ⭐
-├── db/
-│   ├── db_init_v1.1.sql         # v1.1 完整 Schema（9 表 + 种子数据）
-│   ├── migrations/
-│   │   ├── 001_company_layer.sql  # v1.2 迁移脚本
-│   │   └── 002_theme_registry.sql # v1.4 迁移脚本 ⭐
-│   └── trend_tracker.db         # SQLite 运行时数据库（.gitignore）
-├── docs/
-│   └── ARCHITECTURE.md          # 系统架构基线文档 (v1.4) ⭐
-├── trend_data/
-│   └── weekly/                  # 周报 JSON 导出（.gitignore）
-├── pipeline_mock.py             # Mock 数据 Pipeline（v1.4） ⭐
-├── pipeline_real.py             # 真实数据 Pipeline（v1.4，10 阶段） ⭐
-├── tests/                       # 测试目录（预留）
-├── calculators/                 # 计算器目录（预留）
-├── export/                      # 导出目录（预留）
+trend-tracker/
+├── README.md                    ← 本文件（Repository Identity）
+├── ROADMAP.md                   ← Trend Tracker v1.4 路线图（Legacy，待 WP5 归档）
 ├── .gitignore
-└── README.md
+│
+├── docs/                        ← 文档基线
+│   ├── README.md                ← 文档导航入口
+│   ├── core/                    ← 核心文档（使命/架构/治理/路线图等）
+│   ├── daily/                   ← Layer 1 域文档
+│   ├── research-terminal/       ← Layer 2 域文档
+│   ├── industry/                ← Layer 3 域文档
+│   ├── company/                 ← Layer 4 域文档
+│   ├── monthly/                 ← Layer 5 域文档
+│   ├── provider/                ← 数据源注册表
+│   ├── evidence/                ← 证据层标准
+│   ├── investment-mapping/      ← 投资映射载体
+│   └── ARCHITECTURE.md          ← Trend Tracker v1.4 遗留文档（待 WP5 归档）
+│
+├── src/                         ← 源代码（待实现）
+├── config/                      ← 配置（待实现）
+├── examples/                    ← 示例（待实现）
+├── scripts/                     ← 脚本（待实现）
+├── tests/                       ← 测试（待实现）
+│
+├── archive/                     ← 归档
+│   └── legacy-trend-tracker/    ← Trend Tracker v1.4 遗留代码归档
+│       └── LEGACY_MAPPING.md    ← 遗留组件演化映射
+│
+├── collectors/                  ← Trend Tracker v1.4 代码（待 WP5 归档）
+├── processors/                  ← Trend Tracker v1.4 代码（待 WP5 归档）
+├── db/                          ← Trend Tracker v1.4 代码（待 WP5 归档）
+├── pipeline_mock.py             ← Trend Tracker v1.4 代码（待 WP5 归档）
+└── pipeline_real.py             ← Trend Tracker v1.4 代码（待 WP5 归档）
 ```
-
-### 数据库 Schema（13 表）
-
-| 表名 | 用途 | 版本 |
-|------|------|------|
-| `themes` | 主题注册表（支持父子主题演化） | v1.1 |
-| `companies` | 公司注册表（12 列） | v1.2 ⭐ |
-| `events` | 原始事件记录 | v1.1 |
-| `event_theme_mapping` | M:N 事件↔主题映射 | v1.1 |
-| `signals` | 周度三维信号评分 | v1.1 |
-| `trends_weekly` | 周度趋势加速度 | v1.1 |
-| `capital_flow` | 资本流向记录 | v1.1 |
-| `theme_registry` | 规范主题登记表（治理生命周期） | v1.4 ⭐ |
-| `theme_aliases` | 别名→规范主题映射 | v1.4 ⭐ |
-| `company_actions` | 事件→公司动作记录 | v1.2 ⭐ |
-| `company_weekly_summary` | 每公司每周汇总 | v1.2 ⭐ |
-| `weekly_snapshots` | 周报不可变快照（SHA256） | v1.2 |
-| `pipeline_runs` | Pipeline 执行日志 | v1.2 |
 
 ---
 
-## 如何运行
+## 当前阶段
 
-### 前置条件
-
-```bash
-# Python 3.9+
-pip install feedparser  # 仅 real pipeline 需要（RSS 解析）
+```
+Phase 1:  Architecture Freeze          ✅ Completed (2026-07-06)
+Phase 2:  Documentation                 ✅ Completed
+Phase 3:  GitHub First Backup / Release 🔄 In Progress
+Phase 4:  Daily Briefing V2             ⬜ Pending
+Phase 5:  Research Terminal V1          ⬜ Pending
+Phase 6:  Industry Research             ⬜ Pending
+Phase 7:  Company Research              ⬜ Pending
+Phase 8:  Monthly Outlook               ⬜ Pending
+Phase 9:  Evidence & Verification       ⬜ Pending
+Phase 10: Source Registry               ⬜ Pending
+Phase 11: Investment Mapping            ⬜ Pending
 ```
 
-### 初始化数据库
+> 详见 [IMPLEMENTATION_ROADMAP.md](./docs/core/IMPLEMENTATION_ROADMAP.md)
 
-```bash
-cd trend_tracker
-# 从零初始化（v1.1 → v1.2 → v1.4 迁移）
-sqlite3 db/trend_tracker.db < db/db_init_v1.1.sql
-sqlite3 db/trend_tracker.db < db/migrations/001_company_layer.sql
-sqlite3 db/trend_tracker.db < db/migrations/002_theme_registry.sql
-```
+---
 
-### 运行 Mock Pipeline
+## 快速导航
 
-```bash
-cd trend_tracker
-python pipeline_mock.py
-```
+### 新 Agent 入门
 
-输出：
-- 两周期模拟数据（31 事件 × 16 company_actions）
-- 计算 8 主题 + 公司信号评分
-- 提取每主题 Top driver events
-- 导出 `trend_data/weekly/2026-W23.json`（含 `company_actions` + `company_weekly_summary` + `snapshot_explainability`）
+1. 阅读 [docs/core/MISSION.md](./docs/core/MISSION.md) — 理解系统使命
+2. 阅读 [docs/core/ARCHITECTURE.md](./docs/core/ARCHITECTURE.md) — 理解五层架构
+3. 阅读 [docs/core/ENGINEERING_GOVERNANCE.md](./docs/core/ENGINEERING_GOVERNANCE.md) — 理解工程治理
+4. 阅读 [docs/core/AGENT_ONBOARDING.md](./docs/core/AGENT_ONBOARDING.md) — 完成 Onboarding
 
-### 运行 Real Pipeline
+### 开发者参考
 
-```bash
-cd trend_tracker
-python pipeline_real.py
-```
+1. [docs/core/ARCHITECTURE.md](./docs/core/ARCHITECTURE.md) — 确认层级职责
+2. [docs/core/REFACTOR_BACKLOG.md](./docs/core/REFACTOR_BACKLOG.md) — 了解已知架构问题
+3. [docs/provider/DATA_SOURCE.md](./docs/provider/DATA_SOURCE.md) — 确认数据源规则
+4. [docs/core/GOVERNANCE.md](./docs/core/GOVERNANCE.md) — 确认合规要求
 
-**Pipeline 阶段（v1.4，10 阶段）：**
+### 文档导航
 
-| Stage | 名称 | 说明 |
-|-------|------|------|
-| 1 | Collect | 三源采集 + 去重 |
-| 2 | Map & Insert | 主题映射 + 公司动作记录 |
-| 3 | **Theme Registry Normalization** ⭐ | 别名→规范主题归一化 |
-| 4 | Signal Calculation | 三维度信号评分 |
-| 5 | Trend Calculation | 周度趋势加速度 |
-| 6 | Snapshot Explainability | 驱动事件提取 + impact_score |
-| 7 | Capital Flow | 资本流向聚合 |
-| 8 | Company Weekly Summary | 公司周度汇总 |
-| 9 | Export | JSON 导出 + SHA256 快照 |
-| 10 | Verify & Log | 跨表一致性校验 + 运行日志 |
+> 完整文档索引见 [docs/README.md](./docs/README.md)
 
-**⚠️ 注意事项：**
-- arXiv API 有速率限制（~1 req/3s），sandbox 环境可能 IP 级限流
-- GitHub Trending 需要网络访问
-- TechCrunch RSS 需要 `feedparser` 库
-- Reuters 数据源尚未集成
+---
+
+## 治理
+
+本仓库遵循 **Engineering Governance V1** 和 **Documentation Governance V1**。
+
+### 核心治理文档
+
+| 文档 | 职责 |
+|------|------|
+| [GOVERNANCE.md](./docs/core/GOVERNANCE.md) | 治理框架入口（架构/数据/方法论/Provider/视觉） |
+| [ENGINEERING_GOVERNANCE.md](./docs/core/ENGINEERING_GOVERNANCE.md) | 工程治理详细定义（开发标准/AEW/Quality Gates/Git Workflow） |
+| [IMPLEMENTATION_ROADMAP.md](./docs/core/IMPLEMENTATION_ROADMAP.md) | 实施路线图 Phase 1-11 |
+| [OBSERVATION_PHASE_SNAPSHOT.md](./docs/core/OBSERVATION_PHASE_SNAPSHOT.md) | Observation Phase 冻结快照 |
+
+### Architecture Freeze
+
+以下项目处于 Architecture Freeze 状态：
+
+- Daily Briefing V2 输出格式
+- Research Terminal V1 输出格式
+- Trend Tracker 所有 Pipeline 代码
+- 报告生成 Skill / 日报生成 Skill / Trend Tracker Skill
+- 启动路由器 (BOOTSTRAP.md) / 人格框架 (SOUL.md)
+
+> 详见 [docs/core/ENGINEERING_GOVERNANCE.md](./docs/core/ENGINEERING_GOVERNANCE.md) § Architecture Freeze
 
 ---
 
@@ -364,51 +198,26 @@ python pipeline_real.py
 
 | 项目 | 版本 |
 |------|------|
-| 当前版本 | MVP v1.4 |
-| Pipeline Version | v1.4 |
-| Scoring Version | v1.2 |
-| 数据库 Schema | v1.4（通过迁移 001+002） |
-
-### 迁移路径
-
-```
-v1.1 → v1.2: db/migrations/001_company_layer.sql
-  - ALTER companies 增加 6 列（description/founded_year/headquarters/...)
-  - 新增 company_actions 表
-  - 新增 company_weekly_summary 表
-  - 插入 15 家扩展公司
-
-v1.2 → v1.3: 零 Schema 变更
-  - 新增 processors/explainability_processor.py
-  - pipeline_real.py Stage 5 新增 explainability
-  - weekly.json 新增 snapshot_explainability 区块
-
-v1.3 → v1.4: 参照 db/migrations/002_theme_registry.sql
-  - 新增 theme_registry 表（8 canonical themes）
-  - 新增 theme_aliases 表（~40 alias mappings）
-  - 新增 processors/theme_registry_mapper.py
-  - pipeline_real.py 新增 Stage 3 Theme Registry Normalization
-```
+| System Name | Personal Investment Research System |
+| Architecture Baseline | V1 (Frozen 2026-07-06) |
+| Engineering Governance | V1 |
+| Documentation Governance | V1 |
+| Implementation Roadmap | V1 |
+| Repository Migration | In Progress (Phase 3) |
+| Legacy System | Trend Tracker MVP v1.4 |
 
 ---
 
-## 当前数据源状态
+## GitHub Repository
 
-| 数据源 | 类型 | 状态 | 说明 |
-|--------|------|------|------|
-| arXiv API | 论文 | 🟡 受限 | 免费、速率限制 ~1 req/3s，sandbox IP 限流 |
-| TechCrunch RSS | 新闻 | 🟢 可用 | RSS 免费，需要 `feedparser` |
-| GitHub Trending | 仓库 | 🟢 可用 | 网页抓取，无需 API Key |
-| Reuters | 新闻 | 🔴 未集成 | 需 WebSearch 工具集成 |
+| Field | Value |
+|-------|-------|
+| Repository | `HaiyuLiu0511/trend-tracker` |
+| Branch | `main` |
+| Source of Truth | GitHub = Single Source of Truth |
+
+> **Note:** GitHub repository description 待更新为 "Personal Investment Research System — 五层认知积累研究系统"（WP8 执行）
 
 ---
 
-## 后续计划
-
-详见 [GitHub Issues](https://github.com/HaiyuLiu0511/trend-tracker/issues) 和 [ROADMAP.md](./ROADMAP.md)：
-
-1. ✅ **Company Layer Enhancement** — 已完成于 v1.2
-2. ✅ **Snapshot Explainability Enhancement** — 已完成于 v1.3
-3. ✅ **Theme Registry Enhancement** — 已完成于 v1.4
-4. **Observation Phase** — 数据积累与模式观察（v1.5 排期）
-5. 真实周报接入日报/周报生成流程
+*本 README 是 Repository 的身份标识。任何身份变更（系统名称、使命、架构）必须经过用户确认并更新本文档。*
