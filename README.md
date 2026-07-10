@@ -90,7 +90,7 @@ Trend Tracker 的 18 个组件已根据演化路径分类：
 ```
 trend-tracker/
 ├── README.md                    ← 本文件（Repository Identity）
-├── .gitignore
+├── .gitignore                   ← Artifact Protection (WP7)
 │
 ├── docs/                        ← 文档基线
 │   ├── README.md                ← 文档导航入口

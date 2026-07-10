@@ -87,6 +87,28 @@
 
 ## Entries
 
+### [Artifact Protection Upgrade] - 2026-07-10
+
+#### Added
+- `docs/core/ARTIFACT_MANAGEMENT.md` — Artifact management specification: 7-category classification, commit rules, generated report lifecycle, runtime data lifecycle, Build Before Remove principle, Git Hygiene Checklist, .gitignore coverage map
+- `.gitignore` — Comprehensive artifact protection rules (7 categories, 43+ patterns)
+
+#### Changed
+- `.gitignore` — Upgraded from 34 lines (v1.4-era) to comprehensive 7-category protection. New rules: `*.html`, `*.json` (with `!config/*.json` exception), `reports/`, `output/`, `artifacts/`, `examples/generated/`, `trend_data/`, `tmp/`, `.cache/`, `*.cache`, `logs/`, `runtime/`, `*.db`, `*.sqlite`, `*.sqlite3`, `.env.*` (with `!.env.example` exception), additional IDE/OS patterns. Superseded legacy `trend_data/weekly/*.json` and `db/*.db` with broader rules.
+- `docs/README.md` — Added ARTIFACT_MANAGEMENT.md to Core Documentation table (now 12 core docs) and cross-reference map
+- `README.md` — Added Artifact Management reference in repository structure section
+
+#### Evolution Note
+Artifact Protection completes the Repository Governance Baseline. Generated artifacts (HTML reports, JSON data, SQLite databases, logs, cache) are now comprehensively excluded from Git via .gitignore. Static configuration files (`config/*.json`) and milestone examples (`examples/*.html` via `git add -f`) remain trackable through negation rules.
+
+#### Affected Documents
+- `.gitignore` — Modified (comprehensive upgrade, 7 categories)
+- `docs/core/ARTIFACT_MANAGEMENT.md` — New (artifact management specification)
+- `docs/README.md` — Modified (navigation table + cross-reference)
+- `README.md` — Modified (artifact reference in structure section)
+
+---
+
 ### [Legacy Archive & Mapping] - 2026-07-09
 
 #### Added

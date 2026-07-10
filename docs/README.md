@@ -25,6 +25,7 @@ This is the single entry point for all documentation. Any new Agent should start
 | [REFACTOR_BACKLOG.md](./core/REFACTOR_BACKLOG.md) | Refactor backlog (8 items from Observation Phase) | Populated |
 | [CHANGELOG.md](./core/CHANGELOG.md) | System change log | Updated |
 | [OBSERVATION_PHASE_SNAPSHOT.md](./core/OBSERVATION_PHASE_SNAPSHOT.md) | Observation Phase final snapshot — freeze baseline | Frozen |
+| [ARTIFACT_MANAGEMENT.md](./core/ARTIFACT_MANAGEMENT.md) | Artifact classification, .gitignore coverage, Git Hygiene Checklist | Active |
 
 ### Domain Documentation
 
@@ -58,6 +59,7 @@ README.md (this file — entry point)
 ├── core/GOVERNANCE.md (governance rules)
 │   ├── core/ENGINEERING_GOVERNANCE.md (engineering governance V1 — 9 sub-items)
 │   ├── core/IMPLEMENTATION_ROADMAP.md (implementation phases 1-11)
+│   ├── core/ARTIFACT_MANAGEMENT.md (artifact protection & .gitignore coverage)
 │   ├── provider/DATA_SOURCE.md (data source governance)
 │   └── evidence/EVIDENCE_LAYER.md (evidence governance)
 ├── core/AGENT_ONBOARDING.md (how to onboard new Agents)
