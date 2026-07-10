@@ -38,6 +38,16 @@
 
 ---
 
+## Repository Documentation Components
+
+| Legacy Component | Lines | Current Function | Future Module | Evolution Path |
+|-----------------|-------|-----------------|---------------|----------------|
+| `README.md` | 414 | Trend Tracker v1.4 repository README | `README.md` (repository root — already replaced in WP1) | **REPLACED** — Fully superseded by new Personal Investment Research System README. |
+| `ROADMAP.md` | 99 | Trend Tracker v1.1-v1.5 version roadmap | `docs/core/IMPLEMENTATION_ROADMAP.md` (already created in WP4) | **REPLACED** — Fully superseded by Implementation Roadmap V1. |
+| `docs/ARCHITECTURE.md` | 520 | Trend Tracker v1.4 10-stage Pipeline architecture | `docs/core/ARCHITECTURE.md` (already created in WP3) | **REPLACED** — Fully superseded by five-layer architecture document. |
+
+---
+
 ## Skill Files (Local — not in GitHub repository)
 
 | Legacy Component | Lines | Current Function | Future Module | Evolution Path |
@@ -59,7 +69,7 @@
 |---------------|-------|------------|
 | **EVOLVE** | 9 | 4 collectors + 4 processors + 1 db schema + 1 skill script (evidence_layer) |
 | **REFERENCE** | 6 | 2 pipelines + 2 db migrations + 1 skill + 1 skill script (trend_tracker) + 1 renderer + 1 backfill |
-| **REPLACED** | 2 | BOOTSTRAP.md + OBSERVATION_GOVERNANCE.md |
+| **REPLACED** | 5 | 2 skill files (BOOTSTRAP.md + OBSERVATION_GOVERNANCE.md) + 3 documentation files (README.md + ROADMAP.md + docs/ARCHITECTURE.md) |
 | **OBSOLETE** | 1 | promote_20260615.py |
 
 ---
@@ -81,4 +91,4 @@ The following are knowledge assets embedded in legacy code that MUST be referenc
 
 ---
 
-*This document is created in WP2 (Repository Structure Migration) as a reference. Code archiving happens in WP5 (Legacy Archive & Mapping). No code has been moved yet.*
+*This document was created in WP2 (Repository Structure Migration) as a reference. Code archiving was completed in WP5 (Legacy Archive & Mapping) on 2026-07-09. All 16 repository files are now archived in this directory. Local skill files (8 files) are marked as DEPRECATED locally — see §5.2 of the Architecture Migration Blueprint V1.0 Final.*

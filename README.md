@@ -76,12 +76,12 @@ Trend Tracker 的 18 个组件已根据演化路径分类：
 
 | 资产 | 来源 | 说明 |
 |------|------|------|
-| 8 主题分类体系 | `processors/theme_mapper.py` | AI 产业 8 大主题分类关键词 |
-| 公司别名映射表 | `processors/company_mapper.py` | 规范公司名 → 别名映射 |
-| Impact 评分权重 | `processors/explainability_processor.py` | SOURCE_SCORES, EVENT_TYPE_SCORES 权重表 |
-| 主题规范化规则 | `processors/theme_registry_mapper.py` | 别名 → 规范主题映射 |
+| 8 主题分类体系 | `archive/legacy-trend-tracker/processors/theme_mapper.py` | AI 产业 8 大主题分类关键词 |
+| 公司别名映射表 | `archive/legacy-trend-tracker/processors/company_mapper.py` | 规范公司名 → 别名映射 |
+| Impact 评分权重 | `archive/legacy-trend-tracker/processors/explainability_processor.py` | SOURCE_SCORES, EVENT_TYPE_SCORES 权重表 |
+| 主题规范化规则 | `archive/legacy-trend-tracker/processors/theme_registry_mapper.py` | 别名 → 规范主题映射 |
 | Evidence Layer 模式 | `scripts/evidence_layer.py`（本地） | 来源追踪、置信度评分、证据链 |
-| 数据库实体模型 | `db/db_init_v1.1.sql` | Events, themes, companies 实体关系 |
+| 数据库实体模型 | `archive/legacy-trend-tracker/db/db_init_v1.1.sql` | Events, themes, companies 实体关系 |
 
 ---
 
@@ -90,7 +90,6 @@ Trend Tracker 的 18 个组件已根据演化路径分类：
 ```
 trend-tracker/
 ├── README.md                    ← 本文件（Repository Identity）
-├── ROADMAP.md                   ← Trend Tracker v1.4 路线图（Legacy，待 WP5 归档）
 ├── .gitignore
 │
 ├── docs/                        ← 文档基线
@@ -103,8 +102,7 @@ trend-tracker/
 │   ├── monthly/                 ← Layer 5 域文档
 │   ├── provider/                ← 数据源注册表
 │   ├── evidence/                ← 证据层标准
-│   ├── investment-mapping/      ← 投资映射载体
-│   └── ARCHITECTURE.md          ← Trend Tracker v1.4 遗留文档（待 WP5 归档）
+│   └── investment-mapping/      ← 投资映射载体
 │
 ├── src/                         ← 源代码（待实现）
 ├── config/                      ← 配置（待实现）
@@ -112,15 +110,18 @@ trend-tracker/
 ├── scripts/                     ← 脚本（待实现）
 ├── tests/                       ← 测试（待实现）
 │
-├── archive/                     ← 归档
-│   └── legacy-trend-tracker/    ← Trend Tracker v1.4 遗留代码归档
-│       └── LEGACY_MAPPING.md    ← 遗留组件演化映射
-│
-├── collectors/                  ← Trend Tracker v1.4 代码（待 WP5 归档）
-├── processors/                  ← Trend Tracker v1.4 代码（待 WP5 归档）
-├── db/                          ← Trend Tracker v1.4 代码（待 WP5 归档）
-├── pipeline_mock.py             ← Trend Tracker v1.4 代码（待 WP5 归档）
-└── pipeline_real.py             ← Trend Tracker v1.4 代码（待 WP5 归档）
+└── archive/                     ← 归档
+    └── legacy-trend-tracker/    ← Trend Tracker v1.4 遗留代码归档（WP5）
+        ├── DEPRECATED.md        ← 归档说明 + 演化路径
+        ├── LEGACY_MAPPING.md    ← 遗留组件演化映射
+        ├── README.md            ← Trend Tracker v1.4 README（DEPRECATED）
+        ├── ROADMAP.md           ← Trend Tracker v1.4 路线图（DEPRECATED）
+        ├── docs/ARCHITECTURE.md ← Trend Tracker v1.4 架构文档（DEPRECATED）
+        ├── pipeline_mock.py     ← 10-stage Mock Pipeline
+        ├── pipeline_real.py     ← 10-stage Real Pipeline
+        ├── collectors/          ← 数据采集器（4 files）
+        ├── processors/          ← 数据处理器（4 files）
+        └── db/                  ← 数据库 Schema + Migrations（3 files）
 ```
 
 ---

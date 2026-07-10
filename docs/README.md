@@ -97,7 +97,7 @@ README.md (this file — entry point)
 
 ## Legacy Reference
 
-> **Note:** `docs/ARCHITECTURE.md` (root of docs/) is the legacy Trend Tracker v1.4 architecture document. It is pending archival in WP5. The authoritative architecture document is `docs/core/ARCHITECTURE.md`.
+> **Note:** The legacy Trend Tracker v1.4 architecture document (`docs/ARCHITECTURE.md`) has been archived to `../archive/legacy-trend-tracker/docs/ARCHITECTURE.md` (WP5). The authoritative architecture document is [core/ARCHITECTURE.md](./core/ARCHITECTURE.md). See [archive/legacy-trend-tracker/DEPRECATED.md](../archive/legacy-trend-tracker/DEPRECATED.md) for archival details and evolution mapping.
 
 ---
 

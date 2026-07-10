@@ -1,3 +1,9 @@
+> ⚠️ **DEPRECATED** — Trend Tracker v1.4 legacy file. Archived 2026-07-09 (WP5).
+> See [LEGACY_MAPPING.md](./LEGACY_MAPPING.md) for evolution path.
+> Original content preserved below for reference.
+
+---
+
 # Trend Tracker — Roadmap
 
 > 版本演进路线图

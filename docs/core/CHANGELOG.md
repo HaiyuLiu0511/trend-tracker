@@ -87,6 +87,36 @@
 
 ## Entries
 
+### [Legacy Archive & Mapping] - 2026-07-09
+
+#### Added
+- `archive/legacy-trend-tracker/DEPRECATED.md` — Archival notice with evolution language, file inventory, and evolution path summary
+- `archive/legacy-trend-tracker/README.md` — Archived Trend Tracker v1.4 README (retrieved from Git history, DEPRECATED header added)
+
+#### Changed
+- `archive/legacy-trend-tracker/LEGACY_MAPPING.md` — Updated final note: archiving complete (was "no code moved yet")
+- `README.md` (repository root) — Updated repository structure section: removed legacy directories (collectors/, processors/, db/, pipeline_mock.py, pipeline_real.py, ROADMAP.md), added full archive/ tree
+- `docs/README.md` — Updated Legacy Reference section: legacy docs/ARCHITECTURE.md now archived to archive/legacy-trend-tracker/docs/ARCHITECTURE.md
+- `docs/core/OBSERVATION_PHASE_SNAPSHOT.md` — Fixed cross-reference: docs/ARCHITECTURE.md → docs/core/ARCHITECTURE.md
+
+#### Archived (16 files via git mv)
+- `ROADMAP.md` → `archive/legacy-trend-tracker/ROADMAP.md` (DEPRECATED header added)
+- `docs/ARCHITECTURE.md` → `archive/legacy-trend-tracker/docs/ARCHITECTURE.md` (DEPRECATED header added)
+- `pipeline_mock.py` → `archive/legacy-trend-tracker/pipeline_mock.py`
+- `pipeline_real.py` → `archive/legacy-trend-tracker/pipeline_real.py`
+- `collectors/*.py` (4 files) → `archive/legacy-trend-tracker/collectors/`
+- `processors/*.py` (4 files) → `archive/legacy-trend-tracker/processors/`
+- `db/db_init_v1.1.sql` + `db/migrations/*.sql` (3 files) → `archive/legacy-trend-tracker/db/`
+
+#### Removed
+- Empty directories: `collectors/`, `processors/`, `db/`
+- `archive/.DS_Store`
+
+#### Evolution Note
+Build Before Remove principle fully satisfied: new structure (WP2-WP4) was built and committed before legacy files were archived. All 16 files preserve Git history. Legacy Mapping documents 9 EVOLVE, 6 REFERENCE, 1 REPLACED (repository files) evolution paths.
+
+---
+
 ### [Repository Identity Migration] - 2026-07-09
 
 #### Changed
@@ -193,7 +223,7 @@ Trend Tracker is not abandoned — it is the first completed Domain of Personal 
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
+- [README.md](../README.md) — 文档体系入口
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — 架构变更记录（本文档引用）
 - [GOVERNANCE.md](./GOVERNANCE.md) — 变更管理流程（本文档遵循）
 - [REFACTOR_BACKLOG.md](./REFACTOR_BACKLOG.md) — 重构待办（变更需求来源）

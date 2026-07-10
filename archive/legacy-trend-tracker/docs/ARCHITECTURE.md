@@ -1,3 +1,9 @@
+> ⚠️ **DEPRECATED** — Trend Tracker v1.4 legacy file. Archived 2026-07-09 (WP5).
+> See [LEGACY_MAPPING.md](./LEGACY_MAPPING.md) for evolution path.
+> Original content preserved below for reference.
+
+---
+
 # Trend Tracker Architecture (v1.4)
 
 > **Architecture Baseline** — 唯一架构参考文档，所有版本升级以本文档为准。
