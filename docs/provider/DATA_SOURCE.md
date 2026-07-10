@@ -121,9 +121,9 @@ P3: WebFetch (直接抓取)
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
-- [GOVERNANCE.md](./GOVERNANCE.md) — 治理框架（数据治理实施）
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — 架构设计（数据层职责）
+- [README.md](../README.md) — 文档体系入口
+- [GOVERNANCE.md](../core/GOVERNANCE.md) — 治理框架（数据治理实施）
+- [ARCHITECTURE.md](../core/ARCHITECTURE.md) — 架构设计（数据层职责）
 - `~/.workbuddy/frameworks/DATA_GOVERNANCE.md` — 数据治理详细规则（外部引用）
 - `~/.workbuddy/frameworks/PROVIDER_ROUTER_GOVERNANCE.md` — Provider 治理详细规则（外部引用）
 - `~/.workbuddy/config/providers.yaml` — Provider 路由配置（外部引用）

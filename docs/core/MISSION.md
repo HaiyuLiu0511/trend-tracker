@@ -97,7 +97,7 @@
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
+- [README.md](../README.md) — 文档体系入口
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — 架构设计（Mission → Architecture）
 - [RESEARCH_SYSTEM.md](./RESEARCH_SYSTEM.md) — Knowledge Flow（Mission → Implementation）
 - [GOVERNANCE.md](./GOVERNANCE.md) — 治理规则（Mission → Governance）

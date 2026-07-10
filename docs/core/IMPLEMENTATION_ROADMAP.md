@@ -2,7 +2,7 @@
 
 > **Status:** Frozen
 > **Frozen Date:** 2026-07-06 (Observation Phase End)
-> **Repository Migration Date:** 2026-07-08 (WP4)
+> **Repository Migration Date:** 2026-07-08 to 2026-07-10 (WP2-WP7)
 > **Architecture Reference:** [ARCHITECTURE.md](./ARCHITECTURE.md)
 > **Engineering Governance Reference:** [ENGINEERING_GOVERNANCE.md](./ENGINEERING_GOVERNANCE.md)
 
@@ -104,13 +104,13 @@ Phase 11: Investment Mapping            ⬜ Pending
 
 | Step | Status | Description |
 |------|--------|-------------|
-| WP2 | ✅ Committed | Repository skeleton (directories, .gitkeep, LEGACY_MAPPING.md) |
-| WP3 | ✅ Committed | Documentation baseline (38 docs, Core + Domain structure) |
-| WP4 | 🔄 In Progress | Governance migration (Engineering Governance V1, Implementation Roadmap V1) |
-| WP1 | ⬜ Pending | Repository identity (new README.md) |
-| WP5 | ⬜ Pending | Legacy archive & mapping |
-| WP7 | ⬜ Pending | Artifact protection upgrade (.gitignore) |
-| WP6 | ⬜ Pending | Architecture baseline verification |
+| WP2 | ✅ Committed (`1abcf71`) | Repository skeleton (directories, .gitkeep, LEGACY_MAPPING.md) |
+| WP3 | ✅ Committed (`30db569`) | Documentation baseline (38 docs, Core + Domain structure) |
+| WP4 | ✅ Committed (`18c3525`) | Governance migration (Engineering Governance V1, Implementation Roadmap V1) |
+| WP1 | ✅ Committed (`7727b6d`) | Repository identity (new README.md) |
+| WP5 | ✅ Committed (`fdf131c`) | Legacy archive & mapping (16 files archived) |
+| WP7 | ✅ Committed (`5fa8912`) | Artifact protection upgrade (.gitignore, ARTIFACT_MANAGEMENT.md) |
+| WP6 | 🔄 In Progress | Architecture baseline verification (cross-reference corrections) |
 | WP8 | ⬜ Pending | GitHub baseline tag / release |
 
 **验收标准**：
@@ -301,13 +301,13 @@ Phase 1 (Freeze) → Phase 2 (Docs) → Phase 3 (GitHub) → Phase 4 (Daily V2)
 ```
 Phase 1: Architecture Freeze          ✅ Done
 Phase 2: Documentation                 ✅ Done
-Phase 3: GitHub First Backup / Release 🔄 Here (WP4 — Governance Migration)
+Phase 3: GitHub First Backup / Release 🔄 Here (WP6 — Baseline Verification)
 Phase 4-11:                            ⬜ Future
 ```
 
-**当前执行**：Architecture Migration（WP2-WP8），属于 Phase 3 的子任务。
+**当前执行**：Architecture Migration（WP2-WP8），属于 Phase 3 的子任务。WP2-WP5、WP7 已完成并提交，WP6 进行中。
 
-**下一步**：完成 WP4 → WP1 → WP5 → WP7 → WP6 → WP8 → Phase 3 Complete → Phase 4 (Daily Briefing V2 重构)
+**下一步**：完成 WP6 → WP8 (Tag & Release) → Phase 3 Complete → Phase 4 (Daily Briefing V2 重构)
 
 ---
 

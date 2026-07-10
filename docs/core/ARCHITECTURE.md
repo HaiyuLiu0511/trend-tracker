@@ -216,7 +216,7 @@ Layer 5 (Knowledge Evolution)
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
+- [README.md](../README.md) — 文档体系入口
 - [RESEARCH_SYSTEM.md](./RESEARCH_SYSTEM.md) — Knowledge Flow 详解
 - [REPORT_DESIGN.md](./REPORT_DESIGN.md) — 报告设计原则
 - [REFACTOR_BACKLOG.md](./REFACTOR_BACKLOG.md) — 架构已知问题

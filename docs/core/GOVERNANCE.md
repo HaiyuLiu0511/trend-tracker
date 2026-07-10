@@ -212,7 +212,7 @@ Provider 治理规则引用：`~/.workbuddy/frameworks/PROVIDER_ROUTER_GOVERNANC
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
+- [README.md](../README.md) — 文档体系入口
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — 架构设计（架构治理对象）
 - [ENGINEERING_GOVERNANCE.md](./ENGINEERING_GOVERNANCE.md) — Engineering Governance V1（工程治理完整定义）
 - [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) — Implementation Roadmap V1（Phase 1-11 执行计划）

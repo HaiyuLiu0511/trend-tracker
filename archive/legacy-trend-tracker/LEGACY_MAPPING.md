@@ -67,8 +67,8 @@
 
 | Evolution Path | Count | Components |
 |---------------|-------|------------|
-| **EVOLVE** | 9 | 4 collectors + 4 processors + 1 db schema + 1 skill script (evidence_layer) |
-| **REFERENCE** | 6 | 2 pipelines + 2 db migrations + 1 skill + 1 skill script (trend_tracker) + 1 renderer + 1 backfill |
+| **EVOLVE** | 10 | 4 collectors + 4 processors + 1 db schema + 1 skill script (evidence_layer) |
+| **REFERENCE** | 8 | 2 pipelines + 2 db migrations + 1 skill + 1 skill script (trend_tracker) + 1 renderer + 1 backfill |
 | **REPLACED** | 5 | 2 skill files (BOOTSTRAP.md + OBSERVATION_GOVERNANCE.md) + 3 documentation files (README.md + ROADMAP.md + docs/ARCHITECTURE.md) |
 | **OBSOLETE** | 1 | promote_20260615.py |
 

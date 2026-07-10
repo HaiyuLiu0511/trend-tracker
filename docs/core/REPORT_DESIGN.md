@@ -136,7 +136,7 @@ Evidence Layer 规范引用：`~/.workbuddy/frameworks/DATA_GOVERNANCE.md`
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
+- [README.md](../README.md) — 文档体系入口
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — 架构设计（报告是层的输出）
 - [RESEARCH_SYSTEM.md](./RESEARCH_SYSTEM.md) — Knowledge Flow（报告是认知载体）
 - [GOVERNANCE.md](./GOVERNANCE.md) — 治理规则（报告质量检查）

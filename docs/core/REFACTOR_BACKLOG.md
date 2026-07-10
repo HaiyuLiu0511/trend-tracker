@@ -199,7 +199,7 @@
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
+- [README.md](../README.md) — 文档体系入口
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — 架构设计（重构依据）
 - [GOVERNANCE.md](./GOVERNANCE.md) — 治理规则（重构合规要求）
 - [CHANGELOG.md](./CHANGELOG.md) — 变更记录（重构完成后更新）

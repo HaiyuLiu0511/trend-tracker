@@ -175,7 +175,7 @@ Step 7: Ready to Work
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
+- [README.md](../README.md) — 文档体系入口
 - [MISSION.md](./MISSION.md) — 系统使命（必读 #2）
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — 五层架构（必读 #3）
 - [RESEARCH_SYSTEM.md](./RESEARCH_SYSTEM.md) — Knowledge Flow（必读 #4）

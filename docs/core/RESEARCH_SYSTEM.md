@@ -219,7 +219,7 @@ Daily Briefing
 
 ## Related Documents
 
-- [README.md](./README.md) — 文档体系入口
+- [README.md](../README.md) — 文档体系入口
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — 五层架构（Knowledge Flow → Architecture）
 - [MISSION.md](./MISSION.md) — 系统使命（认知积累是核心资产）
 - [REPORT_DESIGN.md](./REPORT_DESIGN.md) — 报告设计（知识资产的呈现格式）

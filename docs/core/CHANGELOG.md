@@ -87,6 +87,34 @@
 
 ## Entries
 
+### [Final Baseline Verification] - 2026-07-10
+
+#### Fixed
+- Cross-reference corrections in 8 docs: `docs/core/AGENT_ONBOARDING.md`, `docs/core/ARCHITECTURE.md`, `docs/core/GOVERNANCE.md`, `docs/core/MISSION.md`, `docs/core/REFACTOR_BACKLOG.md`, `docs/core/REPORT_DESIGN.md`, `docs/core/RESEARCH_SYSTEM.md` — `./README.md` → `../README.md` (Related Documents sections assumed flat docs/ structure, corrected to docs/core/ subdirectory)
+- Cross-reference corrections in `docs/provider/DATA_SOURCE.md` — `./README.md` → `../README.md`, `./GOVERNANCE.md` → `../core/GOVERNANCE.md`, `./ARCHITECTURE.md` → `../core/ARCHITECTURE.md`
+- Summary count corrections in `archive/legacy-trend-tracker/LEGACY_MAPPING.md` — EVOLVE 9→10, REFERENCE 6→8 (skill files were undercounted)
+- Summary count correction in `docs/core/CHANGELOG.md` WP5 entry — REFERENCE 6→4, REPLACED 1→3 (repository files only)
+
+#### Verification Results
+- 150 markdown links checked, 0 broken (1 archived legacy link expected)
+- All 9 Blueprint WP6 checks passed
+- 0 Python/HTML/JSON/SQL/Pipeline/Prompt modifications
+- Working Tree: 10 files modified (cross-reference fixes only)
+
+#### Affected Documents
+- `docs/core/AGENT_ONBOARDING.md` — Modified (cross-reference fix)
+- `docs/core/ARCHITECTURE.md` — Modified (cross-reference fix)
+- `docs/core/GOVERNANCE.md` — Modified (cross-reference fix)
+- `docs/core/MISSION.md` — Modified (cross-reference fix)
+- `docs/core/REFACTOR_BACKLOG.md` — Modified (cross-reference fix)
+- `docs/core/REPORT_DESIGN.md` — Modified (cross-reference fix)
+- `docs/core/RESEARCH_SYSTEM.md` — Modified (cross-reference fix)
+- `docs/provider/DATA_SOURCE.md` — Modified (cross-reference fixes, 3 links)
+- `archive/legacy-trend-tracker/LEGACY_MAPPING.md` — Modified (summary count corrections)
+- `docs/core/CHANGELOG.md` — Modified (WP6 entry + WP5 count correction)
+
+---
+
 ### [Artifact Protection Upgrade] - 2026-07-10
 
 #### Added
@@ -135,7 +163,7 @@ Artifact Protection completes the Repository Governance Baseline. Generated arti
 - `archive/.DS_Store`
 
 #### Evolution Note
-Build Before Remove principle fully satisfied: new structure (WP2-WP4) was built and committed before legacy files were archived. All 16 files preserve Git history. Legacy Mapping documents 9 EVOLVE, 6 REFERENCE, 1 REPLACED (repository files) evolution paths.
+Build Before Remove principle fully satisfied: new structure (WP2-WP4) was built and committed before legacy files were archived. All 16 files preserve Git history. Legacy Mapping documents 9 EVOLVE, 4 REFERENCE, 3 REPLACED (repository files) evolution paths.
 
 ---
 
