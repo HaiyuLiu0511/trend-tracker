@@ -23,8 +23,8 @@
 ```
 Phase 1:  Architecture Freeze          ✅ Completed
 Phase 2:  Documentation                 ✅ Completed
-Phase 3:  GitHub First Backup / Release 🔄 In Progress
-Phase 4:  Daily Briefing V2             ⬜ Pending
+Phase 3:  GitHub First Backup / Release ✅ Completed (2026-07-10)
+Phase 4:  Daily Briefing V2             🟡 Authorized — Implementation Not Started
 Phase 5:  Research Terminal V1          ⬜ Pending
 Phase 6:  Industry Research             ⬜ Pending
 Phase 7:  Company Research              ⬜ Pending
@@ -90,15 +90,16 @@ Phase 11: Investment Mapping            ⬜ Pending
 
 ### Phase 3: GitHub First Backup / Release
 
-> **Status:** 🔄 In Progress
+> **Status:** ✅ Completed
 > **Started Date:** 2026-07-08
+> **Completed Date:** 2026-07-10
 
 **目标**：所有本地文件同步至 GitHub，建立 Single Source of Truth 规范，打 Tag。
 
 **内容**：
 - 所有本地文件同步至 GitHub
 - 建立 Single Source of Truth 规范
-- 打 Tag：`architecture-baseline-v1`
+- 打 Tag：`v2.0-baseline`
 
 **当前进度**：
 
@@ -110,19 +111,19 @@ Phase 11: Investment Mapping            ⬜ Pending
 | WP1 | ✅ Committed (`7727b6d`) | Repository identity (new README.md) |
 | WP5 | ✅ Committed (`fdf131c`) | Legacy archive & mapping (16 files archived) |
 | WP7 | ✅ Committed (`5fa8912`) | Artifact protection upgrade (.gitignore, ARTIFACT_MANAGEMENT.md) |
-| WP6 | 🔄 In Progress | Architecture baseline verification (cross-reference corrections) |
-| WP8 | ⬜ Pending | GitHub baseline tag / release |
+| WP6 | ✅ Committed (`16796dc`) | Architecture baseline verification (cross-reference corrections) |
+| WP8 | ✅ Completed | GitHub baseline tag / release (`v2.0-baseline`) |
 
 **验收标准**：
 - 所有本地文件与 GitHub 仓库同步
 - Engineering Governance V1 和 Implementation Roadmap 同步至仓库
-- 打 Tag：`architecture-baseline-v1`
+- 打 Tag：`v2.0-baseline`
 
 ---
 
 ### Phase 4: Daily Briefing V2（重构）
 
-> **Status:** ⬜ Pending
+> **Status:** 🟡 Authorized (2026-10-20) — Implementation Not Started
 
 **目标**：基于冻结 Tab 定义，重构内容密度。
 
@@ -301,13 +302,14 @@ Phase 1 (Freeze) → Phase 2 (Docs) → Phase 3 (GitHub) → Phase 4 (Daily V2)
 ```
 Phase 1: Architecture Freeze          ✅ Done
 Phase 2: Documentation                 ✅ Done
-Phase 3: GitHub First Backup / Release 🔄 Here (WP6 — Baseline Verification)
-Phase 4-11:                            ⬜ Future
+Phase 3: GitHub First Backup / Release ✅ Done (2026-07-10, tag `v2.0-baseline`)
+Phase 4: Daily Briefing V2             🟡 Here (Authorized, Implementation Not Started)
+Phase 5-11:                            ⬜ Future
 ```
 
-**当前执行**：Architecture Migration（WP2-WP8），属于 Phase 3 的子任务。WP2-WP5、WP7 已完成并提交，WP6 进行中。
+**当前执行**：Phase 4 (Daily Briefing V2 重构) — 2026-10-20 用户授权进入 Phase 4。Architecture Migration (WP1–WP8) 已完成，Baseline Status Synchronization 已执行，Feature Implementation 尚未开始（新系统业务代码实现进度 0%）。
 
-**下一步**：完成 WP6 → WP8 (Tag & Release) → Phase 3 Complete → Phase 4 (Daily Briefing V2 重构)
+**下一步**：Phase 4 首个 Feature（Daily Briefing V2）→ 用户 Review & Approval 后开工。
 
 ---
 
@@ -321,4 +323,4 @@ Phase 4-11:                            ⬜ Future
 
 ---
 
-*本文档整合自已冻结的 Implementation Roadmap V1。Phase 1-11 定义来自 Observation Phase Final Snapshot §8 (2026-07-06)。不新增任何 Phase，不修改已冻结的执行顺序。当前进度标注反映 2026-07-08 的系统状态。*
+*本文档整合自已冻结的 Implementation Roadmap V1。Phase 1-11 定义来自 Observation Phase Final Snapshot §8 (2026-07-06)。不新增任何 Phase，不修改已冻结的执行顺序。当前进度标注反映 2026-10-20 的系统状态。*

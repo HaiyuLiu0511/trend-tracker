@@ -87,6 +87,33 @@
 
 ## Entries
 
+### [Baseline Status Synchronization] - 2026-10-20
+
+#### Changed
+- `README.md` — 项目阶段状态同步：Phase 3 → Completed (2026-07-10)、Phase 4 → Authorized / Implementation Not Started、Repository Migration → Completed、GitHub repository description 备注由"待更新"改为"已更新"
+- `docs/core/IMPLEMENTATION_ROADMAP.md` — Phase 3 / WP6 / WP8 状态 → Completed；Phase 4 → Authorized, Implementation Not Started；Current Position 更新为 Phase 4；Baseline Tag 引用由 `architecture-baseline-v1` 统一修正为 `v2.0-baseline`（原引用与实际 Baseline Release 不符）
+- `docs/core/CHANGELOG.md` — 追加本条目
+
+#### Verified Baseline
+- WP1–WP8 全部完成，Architecture Migration 完成
+- Baseline Commit: `16796dc`
+- Baseline Tag: `v2.0-baseline`（GitHub Release 已发布，2026-07-10）
+- Daily Briefing V2 尚未产生 Feature Implementation — 新系统业务代码实现进度 0%
+
+#### Context
+- 2026-10-20 完成 Development Resumption Audit（只读审计）：确认 local == origin/main、Working Tree 干净、Phase 4 尚未开始
+- 2026-10-20 用户批准进入 Phase 4，并授权先执行 Baseline Status Synchronization
+
+#### Scope
+- 仅修正已经过时的状态描述，未修改冻结架构、产品设计、治理原则、五层架构或 Phase 1–11 定义与执行顺序
+
+#### Affected Documents
+- `README.md` — Modified（阶段状态同步）
+- `docs/core/IMPLEMENTATION_ROADMAP.md` — Modified（Phase/WP 状态 + Tag 引用修正）
+- `docs/core/CHANGELOG.md` — Modified（追加本条目）
+
+---
+
 ### [Final Baseline Verification] - 2026-07-10
 
 #### Fixed

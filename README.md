@@ -131,8 +131,8 @@ trend-tracker/
 ```
 Phase 1:  Architecture Freeze          ✅ Completed (2026-07-06)
 Phase 2:  Documentation                 ✅ Completed
-Phase 3:  GitHub First Backup / Release 🔄 In Progress
-Phase 4:  Daily Briefing V2             ⬜ Pending
+Phase 3:  GitHub First Backup / Release ✅ Completed (2026-07-10, tag `v2.0-baseline`)
+Phase 4:  Daily Briefing V2             🟡 Authorized — Implementation Not Started
 Phase 5:  Research Terminal V1          ⬜ Pending
 Phase 6:  Industry Research             ⬜ Pending
 Phase 7:  Company Research              ⬜ Pending
@@ -204,7 +204,7 @@ Phase 11: Investment Mapping            ⬜ Pending
 | Engineering Governance | V1 |
 | Documentation Governance | V1 |
 | Implementation Roadmap | V1 |
-| Repository Migration | In Progress (Phase 3) |
+| Repository Migration | Completed (Phase 3, 2026-07-10) |
 | Legacy System | Trend Tracker MVP v1.4 |
 
 ---
@@ -217,7 +217,7 @@ Phase 11: Investment Mapping            ⬜ Pending
 | Branch | `main` |
 | Source of Truth | GitHub = Single Source of Truth |
 
-> **Note:** GitHub repository description 待更新为 "Personal Investment Research System — 五层认知积累研究系统"（WP8 执行）
+> **Note:** GitHub repository description 已更新为 "Personal Investment Research System — Architecture Baseline (v2.0-baseline)"（WP8 完成，2026-07-10）
 
 ---
 
