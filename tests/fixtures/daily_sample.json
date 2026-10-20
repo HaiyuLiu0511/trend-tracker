@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "report_type": "Daily Briefing",
+    "run_date": "2026-10-20",
+    "data_date": "2026-10-20",
+    "data_mode": "mock"
+  },
+  "tabs": {
+    "highlights": {
+      "tab_number": 1,
+      "items": [
+        {
+          "availability": "available",
+          "text": "【演示数据】某算力供应商发布新一代推理芯片公告，标称单卡吞吐提升 2.4 倍，配套软件栈同步开源。本条目用于验证渲染链路，不代表任何真实企业公告。",
+          "source": {
+            "name": "mock-provider-alpha",
+            "provider_tier": "P0",
+            "locator": "mock://fixtures/alpha/2026-10-20/announcement-01"
+          },
+          "confidence": "HIGH",
+          "estimated": false,
+          "unavailable_reason": null
+        },
+        {
+          "availability": "available",
+          "text": "【演示数据】同日出现两条关于同一芯片产能的二手报道，措辞高度相似，疑似同源转述，尚无法确认是否独立信源。本条目用于展示 MEDIUM 置信度标注。",
+          "source": {
+            "name": "mock-provider-beta",
+            "provider_tier": "P1",
+            "locator": "mock://fixtures/beta/2026-10-20/news-07",
+            "routing": {
+              "attempted": [
+                { "tier": "P0", "provider": "mock-primary-feed", "outcome": "no_data" },
+                { "tier": "P1", "provider": "mock-provider-beta", "outcome": "success" }
+              ]
+            }
+          },
+          "confidence": "MEDIUM",
+          "estimated": false,
+          "unavailable_reason": null
+        }
+      ]
+    },
+    "market_snapshot": {
+      "tab_number": 2,
+      "items": [
+        {
+          "availability": "available",
+          "text": "【演示数据】模拟指数收盘 3,412.65，涨 0.82%；模拟成交额 9,870 亿元，较前一日放大约 6%。数值由 fixture 写死，用于验证 TIER P0 标注路径，不具备任何市场含义。",
+          "source": {
+            "name": "mock-market-feed",
+            "provider_tier": "P0",
+            "locator": "mock://fixtures/market/2026-10-20/close"
+          },
+          "confidence": "HIGH",
+          "estimated": false,
+          "unavailable_reason": null
+        },
+        {
+          "availability": "unavailable",
+          "text": null,
+          "source": null,
+          "confidence": null,
+          "estimated": false,
+          "unavailable_reason": "【演示场景】P0 mock-market-feed 无北向资金当日数据；P1 mock-alt-feed 未接入。按规则输出「数据不可用」，不得填充任何数值。"
+        }
+      ]
+    },
+    "impact_analysis": {
+      "tab_number": 3,
+      "items": [
+        {
+          "availability": "available",
+          "text": "【演示数据】影响链推演：推理成本下降 → 云厂商单位算力支出效率提升 → 大模型推理服务毛利改善 → 应用层调用量可能上行。此为基于单条公告的结构化推演，未经交叉验证，仅供链路验证使用。",
+          "source": {
+            "name": "mock-impact-engine",
+            "provider_tier": "P1",
+            "locator": "mock://fixtures/impact/2026-10-20/chain-03",
+            "routing": {
+              "attempted": [
+                { "tier": "P0", "provider": "mock-primary-feed", "outcome": "timeout" },
+                { "tier": "P1", "provider": "mock-impact-engine", "outcome": "success" }
+              ]
+            }
+          },
+          "confidence": "LOW-MEDIUM",
+          "estimated": false,
+          "unavailable_reason": null
+        },
+        {
+          "availability": "available",
+          "text": "【演示数据】算力供给侧扩产计划：模拟口径下明年出货量增速区间为 25% 至 40%，该区间为粗略推演结果，用于验证「（估算）」标注渲染。",
+          "source": {
+            "name": "mock-web-scrape",
+            "provider_tier": "P2",
+            "locator": "mock://fixtures/web/2026-10-20/supply-forecast"
+          },
+          "confidence": "LOW",
+          "estimated": true,
+          "unavailable_reason": null
+        }
+      ]
+    },
+    "knowledge_bite": {
+      "tab_number": 4,
+      "items": [
+        {
+          "availability": "available",
+          "cognitive_unit": "【演示数据】判断「芯片性能提升」是否构成产业拐点，关键不在峰值算力，而在单位推理成本能否跨过应用可负担阈值——性能翻倍若伴随价格同步上行，对下游是中性事件。",
+          "why_it_matters": "【演示数据】这条判断规则可复用于后续所有算力类公告：先核对定价，再判断是否真的降低了应用侧门槛，避免把参数升级误读为需求拐点。",
+          "source": {
+            "name": "mock-knowledge-base",
+            "provider_tier": "P0",
+            "locator": "mock://fixtures/knowledge/cost-threshold-rule"
+          },
+          "confidence": "MEDIUM",
+          "estimated": false,
+          "unavailable_reason": null
+        }
+      ]
+    },
+    "follow_up": {
+      "tab_number": 5,
+      "items": [
+        {
+          "availability": "available",
+          "action": "【演示数据】跟踪该芯片的实际交付节奏：核对首批出货客户与产能爬坡时间表，判断公告中的性能指标是否可在量产阶段维持。",
+          "next_check": "2026-11-03",
+          "linked_theme": "AI 算力供应链",
+          "source": {
+            "name": "mock-followup-tracker",
+            "provider_tier": "P0",
+            "locator": "mock://fixtures/followup/delivery-cadence"
+          },
+          "confidence": "MEDIUM",
+          "estimated": false,
+          "unavailable_reason": null
+        },
+        {
+          "availability": "available",
+          "action": "【演示数据】核实两条二手报道是否同源：比对发布时间与引用链条，若为同一原始信源则合并计为一条，并下调独立信源计数。",
+          "next_check": "2026-10-22",
+          "linked_theme": "信源质量治理",
+          "source": {
+            "name": "mock-followup-tracker",
+            "provider_tier": "P0",
+            "locator": "mock://fixtures/followup/source-dedup"
+          },
+          "confidence": "MEDIUM",
+          "estimated": false,
+          "unavailable_reason": null
+        }
+      ]
+    }
+  },
+  "methodology": {
+    "methods": [
+      "【演示数据】按 docs/daily/workflow.md 的六步链路组织：Data Collection → Event Identification → Impact Analysis → Knowledge Extraction → Follow-up Marking → Report Generation。",
+      "【演示数据】可信度标注沿用 docs/evidence/EVIDENCE_LAYER.md 的四级标准（HIGH / MEDIUM / LOW-MEDIUM / LOW）。",
+      "【演示数据】Fallback 标注仅在输入提供 routing.attempted 真实回退记录时渲染。"
+    ],
+    "limitations": [
+      "本报告 100% 使用 fixture 写死的演示数据，未接入任何真实数据源，不可用于投资判断。",
+      "未实现自动交叉验证：可信度徽章仅是输入数据的自带标注，本系统未对其真实性做过核验（BACKLOG P0-003 未完成）。",
+      "影响链推演为单条信息驱动的结构化推理，缺少反向验证与交叉信源支持，置信度上限被限定为 LOW-MEDIUM。"
+    ]
+  }
+}

@@ -19,6 +19,11 @@
 # Exception: static configuration files that require version control
 !config/*.json
 
+# Exception: test fixtures are test assets (input contracts), not generated output.
+# Without this, `tests/fixtures/*.json` would be excluded by the `*.json` rule above
+# and the test suite could not run on a fresh clone.
+!tests/**/*.json
+
 # Generated report directories
 reports/
 output/
