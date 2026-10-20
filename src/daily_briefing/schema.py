@@ -1,4 +1,4 @@
-"""Daily Briefing V2 (Slice 1) — input contract and validation.
+"""Daily Briefing V2 — input contract and validation.
 
 Pure standard library. No third-party runtime dependency.
 
@@ -11,6 +11,15 @@ The contract enforces the frozen rules that live in
 4. Missing data must be explicitly marked — never faked.
 5. Provider fallback must be evidenced by a real routing record, never
    inferred merely from a non-P0 provider tier.
+
+Slice 2 addition: an optional ``events`` block carrying reusable Event
+Records (:mod:`contracts.event`). The block is purely additive — a document
+without it validates and renders exactly as before.
+
+The shared primitives (error type, confidence scale, provider vocabulary,
+source validation) now live in :mod:`contracts.evidence` and are re-exported
+here under their original names, so this module's public interface is
+unchanged.
 """
 
 from __future__ import annotations
@@ -18,6 +27,19 @@ from __future__ import annotations
 import re
 import unicodedata
 from typing import Any, Dict, Iterable, List, Optional
+
+from contracts.evidence import (
+    CONFIDENCE_BADGE,
+    CONFIDENCE_VALUES,
+    PROVIDER_TIERS,
+    ROUTING_OUTCOMES,
+    ContractError,
+    get_fallback_chain,
+    non_empty_str,
+    require,
+    validate_source,
+)
+from contracts.event import TRACKED_STATUS, validate_events
 
 # --------------------------------------------------------------------------
 # Frozen constants
@@ -82,20 +104,14 @@ TAB_DEFS: Dict[str, Dict[str, Any]] = {
 #: docs/core/REPORT_DESIGN.md L87 / docs/daily/workflow.md L33
 WORD_LIMIT: int = 500
 
-#: docs/evidence/EVIDENCE_LAYER.md — Confidence Rating Standard
-CONFIDENCE_VALUES: List[str] = ["HIGH", "MEDIUM", "LOW-MEDIUM", "LOW"]
-CONFIDENCE_BADGE: Dict[str, str] = {
-    "HIGH": "🟢",
-    "MEDIUM": "🟡",
-    "LOW-MEDIUM": "🟠",
-    "LOW": "🔴",
-}
-
-#: Provider Routing Chain (docs/core/ENGINEERING_GOVERNANCE.md, docs/provider/DATA_SOURCE.md)
-PROVIDER_TIERS: List[str] = ["P0", "P1", "P2", "P3"]
-
-#: Terminal outcomes of a routing attempt.
-ROUTING_OUTCOMES: List[str] = ["success", "no_data", "error", "timeout"]
+# --------------------------------------------------------------------------
+# Shared primitives
+# --------------------------------------------------------------------------
+#
+# CONFIDENCE_VALUES / CONFIDENCE_BADGE / PROVIDER_TIERS / ROUTING_OUTCOMES /
+# ContractError are defined once in contracts.evidence and imported above.
+# They are re-exported here so `daily_briefing.schema` keeps its historical
+# public interface (see __all__ at the bottom of this module).
 
 #: Fixed wording used whenever data is unavailable. Never a blank cell.
 UNAVAILABLE_LABEL: str = "数据不可用"
@@ -120,10 +136,6 @@ REAL_MODE_BANNER: str = (
 # --------------------------------------------------------------------------
 # Errors
 # --------------------------------------------------------------------------
-
-
-class ContractError(ValueError):
-    """Raised when the input document violates the frozen contract."""
 
 
 class WordLimitExceeded(ContractError):
@@ -195,122 +207,110 @@ def count_tab_words(items: Iterable[Dict[str, Any]], tab_key: str) -> int:
 # --------------------------------------------------------------------------
 
 
-def _require(cond: bool, message: str) -> None:
-    if not cond:
-        raise ContractError(message)
-
-
-def _non_empty_str(value: Any) -> bool:
-    return isinstance(value, str) and value.strip() != ""
-
-
 def _validate_source(source: Any, path: str) -> List[Dict[str, Any]]:
-    """Validate a source block and return the evidenced fallback chain.
+    """Backward-compatible alias for :func:`contracts.evidence.validate_source`.
 
-    The fallback chain is derived from ``routing.attempted`` records only.
-    A non-P0 tier alone is *not* evidence that a higher-priority provider
-    failed, so no fallback is rendered without a matching record.
+    The implementation now lives in the shared contract layer, so the daily
+    briefing contract and the event contract share one source-validation rule
+    set. The behaviour is unchanged.
     """
-    _require(isinstance(source, dict), f"{path}.source must be an object")
+    return validate_source(source, path)
 
-    _require(
-        _non_empty_str(source.get("name")),
-        f"{path}.source.name must be a non-empty string",
-    )
-    tier = source.get("provider_tier")
-    _require(
-        tier in PROVIDER_TIERS,
-        f"{path}.source.provider_tier must be one of {PROVIDER_TIERS}, got {tier!r}",
-    )
-    _require(
-        _non_empty_str(source.get("locator")),
-        f"{path}.source.locator must be a non-empty string (every data point "
-        f"must trace back to its source)",
-    )
 
-    routing = source.get("routing")
-    if routing is None:
-        # No routing evidence. A non-P0 tier is still allowed, but no
-        # fallback annotation may be rendered.
-        return []
+#: Tabs whose items link to a single event, and the tabs that are not allowed
+#: to link to events at all. Tab 4 links to several events (a cognitive unit is
+#: usually composed of more than one fact).
+_SINGLE_EVENT_TABS = ("highlights", "impact_analysis", "follow_up")
+_MULTI_EVENT_TABS = ("knowledge_bite",)
+_NO_EVENT_TABS = ("market_snapshot",)
 
-    _require(
-        isinstance(routing, dict),
-        f"{path}.source.routing must be an object when present",
-    )
-    attempted = routing.get("attempted")
-    _require(
-        isinstance(attempted, list) and len(attempted) > 0,
-        f"{path}.source.routing.attempted must be a non-empty list",
-    )
 
-    successes: List[str] = []
-    for idx, attempt in enumerate(attempted):
-        apath = f"{path}.source.routing.attempted[{idx}]"
-        _require(isinstance(attempt, dict), f"{apath} must be an object")
-        _require(
-            attempt.get("tier") in PROVIDER_TIERS,
-            f"{apath}.tier must be one of {PROVIDER_TIERS}",
+def _validate_event_reference_shape(
+    item: Dict[str, Any], path: str, tab_key: str
+) -> None:
+    """Validate the *shape* of an item's event reference.
+
+    Two kinds of reference exist and must not be mixed up:
+
+    - a Tab item's **direct** link to the event it displays (``event_id``,
+      or ``event_ids`` for Tab 4);
+    - an event's **own** basis references (``derived_from`` and friends),
+      which live on the event record, not on the Tab item.
+
+    Whether a referenced event exists, and whether it has the right assertion
+    type, is checked at document level by :func:`_validate_event_references`.
+    """
+    if tab_key in _NO_EVENT_TABS:
+        require(
+            item.get("event_id") is None,
+            f"{path}.event_id is not allowed in tab '{tab_key}' — a market "
+            f"snapshot is a state, not an event",
         )
-        _require(
-            _non_empty_str(attempt.get("provider")),
-            f"{apath}.provider must be a non-empty string",
+        require(
+            item.get("event_ids") is None,
+            f"{path}.event_ids is not allowed in tab '{tab_key}' — a market "
+            f"snapshot is a state, not an event",
         )
-        _require(
-            attempt.get("outcome") in ROUTING_OUTCOMES,
-            f"{apath}.outcome must be one of {ROUTING_OUTCOMES}",
+        return
+
+    if tab_key in _MULTI_EVENT_TABS:
+        require(
+            item.get("event_id") is None,
+            f"{path}.event_id is not allowed in tab '{tab_key}' — use "
+            f"'event_ids' (plural); a cognitive unit may be composed of "
+            f"several events",
         )
-        if attempt["outcome"] == "success":
-            successes.append(attempt["tier"])
+        event_ids = item.get("event_ids")
+        if event_ids is not None:
+            require(
+                isinstance(event_ids, list) and len(event_ids) > 0,
+                f"{path}.event_ids must be a non-empty list",
+            )
+            for idx, event_id in enumerate(event_ids):
+                require(
+                    non_empty_str(event_id),
+                    f"{path}.event_ids[{idx}] must be a non-empty string",
+                )
+        return
 
-    _require(
-        len(successes) == 1,
-        f"{path}.source.routing.attempted must contain exactly one successful "
-        f"attempt, found {len(successes)}",
-    )
-    _require(
-        successes[0] == tier,
-        f"{path}.source.provider_tier is {tier} but the successful routing "
-        f"attempt is at {successes[0]}; the declared tier must match the "
-        f"provider that actually succeeded",
-    )
-
-    # Evidenced fallback: a higher-priority tier was tried and did not succeed.
-    tier_rank = PROVIDER_TIERS.index(tier)
-    fallback_chain = [
-        {
-            "tier": a["tier"],
-            "provider": a["provider"],
-            "outcome": a["outcome"],
-        }
-        for a in attempted
-        if PROVIDER_TIERS.index(a["tier"]) < tier_rank and a["outcome"] != "success"
-    ]
-    return fallback_chain
+    if tab_key in _SINGLE_EVENT_TABS:
+        require(
+            item.get("event_ids") is None,
+            f"{path}.event_ids is not allowed in tab '{tab_key}' — use "
+            f"'event_id' (singular)",
+        )
+        event_id = item.get("event_id")
+        if event_id is not None:
+            require(
+                non_empty_str(event_id),
+                f"{path}.event_id must be a non-empty string",
+            )
 
 
 def _validate_item(item: Any, path: str, tab_key: str) -> None:
-    _require(isinstance(item, dict), f"{path} must be an object")
+    require(isinstance(item, dict), f"{path} must be an object")
+
+    _validate_event_reference_shape(item, path, tab_key)
 
     availability = item.get("availability")
-    _require(
+    require(
         availability in ("available", "unavailable"),
         f"{path}.availability must be 'available' or 'unavailable', "
         f"got {availability!r}",
     )
 
     if availability == "unavailable":
-        _require(
-            _non_empty_str(item.get("unavailable_reason")),
+        require(
+            non_empty_str(item.get("unavailable_reason")),
             f"{path}.unavailable_reason is required when availability is "
             f"'unavailable' (missing data must be explained, never silently blank)",
         )
         # No fabricated evidence is allowed on an unavailable item.
-        _require(
+        require(
             item.get("source") is None,
             f"{path}.source must be null when availability is 'unavailable'",
         )
-        _require(
+        require(
             item.get("confidence") is None,
             f"{path}.confidence must be null when availability is "
             f"'unavailable' (no confidence badge for missing data)",
@@ -318,19 +318,19 @@ def _validate_item(item: Any, path: str, tab_key: str) -> None:
         return
 
     for field in TAB_DEFS[tab_key]["required_fields"]:
-        _require(
-            _non_empty_str(item.get(field)),
+        require(
+            non_empty_str(item.get(field)),
             f"{path}.{field} must be a non-empty string for tab '{tab_key}'",
         )
 
     confidence = item.get("confidence")
-    _require(
+    require(
         confidence in CONFIDENCE_VALUES,
         f"{path}.confidence must be one of {CONFIDENCE_VALUES}, got {confidence!r}",
     )
 
     estimated = item.get("estimated", False)
-    _require(
+    require(
         isinstance(estimated, bool),
         f"{path}.estimated must be a boolean, got {estimated!r}",
     )
@@ -343,6 +343,79 @@ def _validate_item(item: Any, path: str, tab_key: str) -> None:
 # --------------------------------------------------------------------------
 
 
+def _validate_event_references(
+    tabs: Dict[str, Any], events_index: Dict[str, Dict[str, Any]]
+) -> None:
+    """Cross-validate Tab items against the events block.
+
+    Rules enforced here:
+
+    - DV-2  a referenced event must exist
+    - DV-3  Tab 1 (Today's Highlights) links to a **fact**
+    - DV-4  Tab 3 (Impact Analysis) links to an **inference**
+    - DV-5  Tab 5 (Follow-up Tracker) links to an event whose status is
+            ``open`` — the backward half of the two-way tracking rule
+    - DV-8  every event whose status is ``open`` is picked up by at least one
+            Tab 5 item — the forward half of the same rule
+
+    The two halves together mean: an event is formally tracked **iff** a
+    Follow-up item points at it. An ordinary hypothesis (``status=active``)
+    may exist without any Follow-up; once it becomes ``open`` it must be
+    tracked. No extra state field is needed — ``status`` already carries it.
+    """
+    tracked: Dict[str, str] = {}
+
+    for tab_key in TAB_ORDER:
+        items = tabs[tab_key].get("items") or []
+        for idx, item in enumerate(items):
+            if tab_key in _MULTI_EVENT_TABS:
+                refs = list(item.get("event_ids") or [])
+            else:
+                single = item.get("event_id")
+                refs = [single] if single is not None else []
+
+            for ref in refs:
+                require(
+                    ref in events_index,
+                    f"tabs.{tab_key}.items[{idx}] references an unknown "
+                    f"event: {ref!r}",
+                )
+                event = events_index[ref]
+                if tab_key == "highlights":
+                    require(
+                        event.get("assertion_type") == "fact",
+                        f"tabs.{tab_key}.items[{idx}] links to {ref!r} whose "
+                        f"assertion_type is {event.get('assertion_type')!r}; "
+                        f"Today's Highlights must link to a fact",
+                    )
+                elif tab_key == "impact_analysis":
+                    require(
+                        event.get("assertion_type") == "inference",
+                        f"tabs.{tab_key}.items[{idx}] links to {ref!r} whose "
+                        f"assertion_type is {event.get('assertion_type')!r}; "
+                        f"Impact Analysis must link to an inference",
+                    )
+                elif tab_key == "follow_up":
+                    require(
+                        event.get("status") == TRACKED_STATUS,
+                        f"tabs.{tab_key}.items[{idx}] links to {ref!r} whose "
+                        f"status is {event.get('status')!r}; the Follow-up "
+                        f"Tracker may only link to events whose status is "
+                        f"'{TRACKED_STATUS}'",
+                    )
+                    tracked[ref] = f"tabs.{tab_key}.items[{idx}]"
+
+    for event_id, event in events_index.items():
+        if event.get("status") != TRACKED_STATUS:
+            continue
+        require(
+            event_id in tracked,
+            f"events[{event_id!r}] has status '{TRACKED_STATUS}' and is "
+            f"therefore formally tracked, but no Follow-up Tracker item "
+            f"links to it; a tracked event must be picked up by Tab 5",
+        )
+
+
 def validate(document: Any) -> Dict[str, Any]:
     """Validate a briefing document against the frozen contract.
 
@@ -352,64 +425,77 @@ def validate(document: Any) -> Dict[str, Any]:
     Raises:
         ContractError: on any contract violation, with a precise path.
     """
-    _require(isinstance(document, dict), "document root must be an object")
+    require(isinstance(document, dict), "document root must be an object")
 
     meta = document.get("meta")
-    _require(isinstance(meta, dict), "meta must be an object")
-    _require(
-        _non_empty_str(meta.get("report_type")),
+    require(isinstance(meta, dict), "meta must be an object")
+    require(
+        non_empty_str(meta.get("report_type")),
         "meta.report_type must be a non-empty string",
     )
-    _require(
-        _non_empty_str(meta.get("run_date")),
+    require(
+        non_empty_str(meta.get("run_date")),
         "meta.run_date is required (decisions.md D4: file name uses the run date)",
     )
-    _require(
-        _non_empty_str(meta.get("data_date")),
+    require(
+        non_empty_str(meta.get("data_date")),
         "meta.data_date is required (shown in the report header)",
     )
     data_mode = meta.get("data_mode")
-    _require(
+    require(
         data_mode in ("mock", "real"),
         "meta.data_mode must be 'mock' or 'real'; Slice 1 fixtures must "
         "declare 'mock' so demonstration data can never pose as verified output",
     )
 
     tabs = document.get("tabs")
-    _require(isinstance(tabs, dict), "tabs must be an object")
+    require(isinstance(tabs, dict), "tabs must be an object")
+
+    # Slice 2: the events block is optional. When absent, the document
+    # behaves exactly as it did in Slice 1 — but the cross-validation below
+    # still runs, so a Tab that references an event without declaring one
+    # is rejected rather than silently accepted.
+    events_index: Dict[str, Dict[str, Any]] = {}
+    if "events" in document:
+        events_index = validate_events(document["events"], "events")
 
     for tab_key in TAB_ORDER:
-        _require(
+        require(
             tab_key in tabs,
             f"tabs.{tab_key} is missing; all five frozen tabs are required "
             f"({TAB_DEFS[tab_key]['number']}. {TAB_DEFS[tab_key]['name']})",
         )
         tab = tabs[tab_key]
-        _require(isinstance(tab, dict), f"tabs.{tab_key} must be an object")
-        _require(
+        require(isinstance(tab, dict), f"tabs.{tab_key} must be an object")
+        require(
             tab.get("tab_number") == TAB_DEFS[tab_key]["number"],
             f"tabs.{tab_key}.tab_number must be {TAB_DEFS[tab_key]['number']}",
         )
         items = tab.get("items")
-        _require(
+        require(
             isinstance(items, list),
             f"tabs.{tab_key}.items must be a list",
         )
         for idx, item in enumerate(items):
             _validate_item(item, f"tabs.{tab_key}.items[{idx}]", tab_key)
 
+    # Cross-validation always runs. Gating it on a non-empty index would let
+    # an empty (or absent) events block bypass reference integrity: a Tab
+    # pointing at an event that does not exist must fail either way.
+    _validate_event_references(tabs, events_index)
+
     methodology = document.get("methodology")
-    _require(
+    require(
         isinstance(methodology, dict),
         "methodology is required (Methodology Transparency: every analysis must "
         "state the method used)",
     )
-    _require(
+    require(
         isinstance(methodology.get("methods"), list)
         and len(methodology["methods"]) > 0,
         "methodology.methods must be a non-empty list",
     )
-    _require(
+    require(
         isinstance(methodology.get("limitations"), list)
         and len(methodology["limitations"]) > 0,
         "methodology.limitations must be a non-empty list (every method must "
@@ -418,23 +504,6 @@ def validate(document: Any) -> Dict[str, Any]:
 
     return document
 
-
-def get_fallback_chain(item: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Return the evidenced fallback chain for an available item."""
-    if item.get("availability") != "available":
-        return []
-    source = item.get("source") or {}
-    routing = source.get("routing")
-    if routing is None:
-        return []
-    tier = source.get("provider_tier")
-    attempted = routing.get("attempted") or []
-    rank = PROVIDER_TIERS.index(tier)
-    return [
-        {"tier": a["tier"], "provider": a["provider"], "outcome": a["outcome"]}
-        for a in attempted
-        if PROVIDER_TIERS.index(a["tier"]) < rank and a.get("outcome") != "success"
-    ]
 
 
 __all__ = [
