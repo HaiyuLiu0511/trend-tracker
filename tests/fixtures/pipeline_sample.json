@@ -1,0 +1,218 @@
+{
+  "meta": {
+    "report_type": "Daily Briefing",
+    "run_date": "2026-10-20",
+    "data_date": "2026-10-20",
+    "data_mode": "mock"
+  },
+  "events": [
+    {
+      "event_id": "evt-20261020-chip-launch",
+      "title": "示例科技发布新一代推理芯片",
+      "summary": "【演示数据】首发公告标称单卡吞吐提升 2.4 倍。",
+      "assertion_type": "fact",
+      "status": "active",
+      "occurred_at": "2026-10-20",
+      "collected_at": "2026-10-20",
+      "data_date": "2026-10-20",
+      "themes": ["AI 算力供应链"],
+      "companies": ["示例科技"],
+      "sources": [
+        {
+          "name": "mock-provider-alpha",
+          "provider_tier": "P0",
+          "locator": "mock://pipeline/2026-10-20/announcement-01"
+        }
+      ],
+      "confidence": "HIGH",
+      "estimated": false
+    },
+    {
+      "event_id": "evt-20261020-chip-v2",
+      "title": "示例科技修订芯片规格说明",
+      "summary": "【演示数据】官方次日修订首发吞吐数据，数值下调。",
+      "assertion_type": "fact",
+      "status": "active",
+      "occurred_at": "2026-10-20",
+      "collected_at": "2026-10-20",
+      "data_date": "2026-10-20",
+      "themes": ["AI 算力供应链"],
+      "companies": ["示例科技"],
+      "supersedes": "evt-20261020-chip-launch",
+      "sources": [
+        {
+          "name": "mock-provider-alpha",
+          "provider_tier": "P0",
+          "locator": "mock://pipeline/2026-10-20/announcement-01-revised"
+        },
+        {
+          "name": "mock-provider-beta",
+          "provider_tier": "P1",
+          "locator": "mock://pipeline/2026-10-20/announcement-01-revised.secondary",
+          "routing": {
+            "attempted": [
+              { "tier": "P0", "provider": "mock-provider-alpha", "outcome": "no_data" },
+              { "tier": "P1", "provider": "mock-provider-beta", "outcome": "success" }
+            ]
+          }
+        }
+      ],
+      "confidence": "HIGH",
+      "estimated": false
+    },
+    {
+      "event_id": "evt-20261020-chip-impact",
+      "title": "推理成本下降的传导路径",
+      "summary": "【演示数据】推演：单卡吞吐提升带来单位推理成本下降。",
+      "assertion_type": "inference",
+      "status": "active",
+      "occurred_at": "2026-10-20",
+      "collected_at": "2026-10-20",
+      "data_date": "2026-10-20",
+      "themes": ["AI 算力供应链"],
+      "derived_from": ["evt-20261020-chip-v2"],
+      "sources": [
+        {
+          "name": "mock-impact-engine",
+          "provider_tier": "P1",
+          "locator": "mock://pipeline/2026-10-20/chain-03",
+          "routing": {
+            "attempted": [
+              { "tier": "P0", "provider": "mock-primary-feed", "outcome": "timeout" },
+              { "tier": "P1", "provider": "mock-impact-engine", "outcome": "success" }
+            ]
+          }
+        }
+      ],
+      "confidence": "LOW-MEDIUM",
+      "estimated": false
+    },
+    {
+      "event_id": "evt-20261020-margin-chain",
+      "title": "云厂商毛利改善的下游传导",
+      "summary": "【演示数据】在成本传导之上，进一步推断应用层调用量可能上行。",
+      "assertion_type": "inference",
+      "status": "active",
+      "occurred_at": "2026-10-20",
+      "collected_at": "2026-10-20",
+      "data_date": "2026-10-20",
+      "themes": ["AI 算力供应链"],
+      "derived_from": ["evt-20261020-chip-impact"],
+      "sources": [
+        {
+          "name": "mock-impact-engine",
+          "provider_tier": "P1",
+          "locator": "mock://pipeline/2026-10-20/chain-04",
+          "routing": {
+            "attempted": [
+              { "tier": "P0", "provider": "mock-primary-feed", "outcome": "timeout" },
+              { "tier": "P1", "provider": "mock-impact-engine", "outcome": "success" }
+            ]
+          }
+        }
+      ],
+      "confidence": "LOW",
+      "estimated": true
+    },
+    {
+      "event_id": "evt-20261020-dedup-hypothesis",
+      "title": "二手报道同源假设",
+      "summary": "【演示数据】假设当日两条二手报道同源，独立性存疑，已纳入正式跟踪。",
+      "assertion_type": "hypothesis",
+      "status": "open",
+      "occurred_at": "2026-10-20",
+      "collected_at": "2026-10-20",
+      "data_date": "2026-10-20",
+      "themes": ["信源质量治理"],
+      "verification_criteria": "比对两条报道的发布时间与引用链条，确认是否指向同一原始信源。",
+      "sources": [
+        {
+          "name": "mock-research-note",
+          "provider_tier": "P2",
+          "locator": "mock://pipeline/2026-10-20/dedup-hypothesis"
+        }
+      ],
+      "confidence": "LOW",
+      "estimated": false
+    },
+    {
+      "event_id": "evt-20261020-delivery-hypothesis",
+      "title": "产能爬坡节奏假设",
+      "summary": "【演示数据】假设该芯片实际交付节奏将低于公告口径；本条尚未纳入正式跟踪。",
+      "assertion_type": "hypothesis",
+      "status": "active",
+      "occurred_at": "2026-10-20",
+      "collected_at": "2026-10-20",
+      "data_date": "2026-10-20",
+      "themes": ["AI 算力供应链"],
+      "verification_criteria": "核对首批出货客户名单与产能爬坡时间表是否与公告口径一致。",
+      "sources": [
+        {
+          "name": "mock-research-note",
+          "provider_tier": "P2",
+          "locator": "mock://pipeline/2026-10-20/delivery-hypothesis"
+        }
+      ],
+      "confidence": "LOW",
+      "estimated": false
+    }
+  ],
+  "selection": {
+    "tab1_event_ids": ["evt-20261020-chip-v2"],
+    "tab3_event_ids": [
+      "evt-20261020-margin-chain",
+      "evt-20261020-chip-impact"
+    ]
+  },
+  "market_data": {
+    "items": [
+      {
+        "text": "【演示数据】模拟指数收盘 3,412.65，涨 0.82%；模拟成交额 9,870 亿元。数值由 fixture 写死，不具备任何市场含义。",
+        "source": {
+          "name": "mock-market-feed",
+          "provider_tier": "P0",
+          "locator": "mock://pipeline/2026-10-20/market/close"
+        },
+        "confidence": "HIGH",
+        "estimated": false
+      }
+    ],
+    "unavailable_reason": null
+  },
+  "knowledge_bites": [
+    {
+      "cognitive_unit": "【演示数据】判断「芯片性能提升」是否构成产业拐点，关键不在峰值算力，而在单位推理成本能否跨过应用可负担阈值。",
+      "why_it_matters": "【演示数据】该判断规则可复用于后续所有算力类公告，且由一条事实与一条推演共同支撑。",
+      "event_ids": [
+        "evt-20261020-chip-v2",
+        "evt-20261020-chip-impact"
+      ],
+      "source": {
+        "name": "mock-knowledge-base",
+        "provider_tier": "P0",
+        "locator": "mock://pipeline/2026-10-20/knowledge/cost-threshold"
+      },
+      "confidence": "MEDIUM",
+      "estimated": false
+    }
+  ],
+  "follow_up_plan": [
+    {
+      "event_id": "evt-20261020-dedup-hypothesis",
+      "action": "【演示数据】核实两条二手报道是否同源：比对发布时间与引用链条，若指向同一原始信源则合并计为一条。",
+      "next_check": "2026-10-22",
+      "linked_theme": "信源质量治理"
+    }
+  ],
+  "methodology": {
+    "methods": [
+      "【演示数据】按 docs/daily/workflow.md 的六步链路组织。",
+      "【演示数据】Event Record 按共享契约校验；本 Pipeline 只做结构化搬运，不改写文本、不判断重要性。"
+    ],
+    "limitations": [
+      "本报告 100% 使用 fixture 写死的演示数据，未接入任何真实数据源，不可用于投资判断。",
+      "Pipeline 未执行任何 Evidence 验证：可信度徽章仅为输入数据的自带标注（BACKLOG P0-003 未完成）。",
+      "Knowledge Bite 与 Follow-up 计划均由输入方显式提供，未由事件自动生成。"
+    ]
+  }
+}
