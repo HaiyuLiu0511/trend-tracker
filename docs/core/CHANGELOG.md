@@ -87,6 +87,29 @@
 
 ## Entries
 
+### [Slice 4 — Structured Research Input Preparation] - 2026-10-21
+
+#### Added
+- `docs/daily/INPUT_PREPARATION.md` — 上游研究资料到 Daily Briefing 源文档的准备指南（Status: Populated，补充指南，不改变标准五文档结构）。覆盖：七个顶层输入块格式与职责、Event Record 必填字段、断言分类决策表（fact / inference / hypothesis）、`derived_from` / `verification_criteria` / `status=open` 的使用条件、Tab 1/3 显式事件选择、Market Snapshot 缺失数据处理、Knowledge Bite 认知价值验收、Follow-up 可操作性验收、Sources / Confidence / Estimated 标注规则、Mock / Real Mode 披露纪律、常见 ContractError → 成因 → 修复映射、CLI 命令与退出码、最终 Input Preparation Checklist。规则分三层标注：Contract Hard Requirements（代码强制）/ Research Quality Requirements（冻结 D2/D3，需人工判断内容质量）/ Recommended Writing Practices（推荐表达方式）
+
+#### Changed
+- `docs/README.md` — 在 Domain Documentation 下登记 Input Preparation 补充指南，并在 Cross-Reference Map 中补充条目
+- `docs/core/CHANGELOG.md` — 追加本条目
+
+#### Verification
+- 181 项既有测试零修改、全部通过（`PYTHONPATH=src pytest` 与 `env -u PYTHONPATH pytest` 双模式）
+- 指南引用的全部测试函数名、文件路径与规则名称已逐一核对存在
+- 端到端 CLI 实测：`tests/fixtures/pipeline_sample.json` → 五 Tab HTML 生成成功，MOCK 横幅与来源标注正确
+- 未新增任何契约规则；`src/` 与 `tests/` 零修改
+
+#### Scope
+- Documentation / Workflow Feature，无产品代码变更
+- 未修改标准五份 Daily 文档、Architecture、Governance、Roadmap、Contract、Pipeline、Renderer 或测试
+- BACKLOG P0-003 保持 Pending（Evidence 验证机制未完成）
+- 不依赖 Phase 9 / Phase 10
+
+---
+
 ### [Baseline Status Synchronization] - 2026-10-20
 
 #### Changed

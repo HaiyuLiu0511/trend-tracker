@@ -37,6 +37,8 @@ This is the single entry point for all documentation. Any new Agent should start
 | Company Research | [company/](./company/) | Layer 4 — Decision Support | Company deep research + investment decision |
 | Monthly Outlook | [monthly/](./monthly/) | Layer 5 — Knowledge Evolution | Monthly cognitive evolution + investment map update |
 
+**Supplementary guide:** Daily Briefing additionally carries [daily/INPUT_PREPARATION.md](./daily/INPUT_PREPARATION.md) — how to assemble a valid pipeline source document. It supplements the five standard `daily/` documents and does not change them.
+
 ### Cross-Cutting Documentation
 
 | Document | Directory | Purpose |
@@ -65,6 +67,7 @@ README.md (this file — entry point)
 ├── core/AGENT_ONBOARDING.md (how to onboard new Agents)
 ├── core/OBSERVATION_PHASE_SNAPSHOT.md (freeze baseline)
 ├── daily/ (Layer 1 domain docs)
+│   └── daily/INPUT_PREPARATION.md (how to prepare a valid pipeline input)
 ├── research-terminal/ (Layer 2 domain docs)
 ├── industry/ (Layer 3 domain docs)
 ├── company/ (Layer 4 domain docs)
