@@ -71,6 +71,24 @@ Standard library only, plus a read-only reuse of the shared contract layer
 No third-party package, no packaging metadata, no change to any existing
 module, contract, renderer or pipeline behaviour.
 
+Validation scope
+---------------
+Only the **Event Contract** (``events[]``) is *enforced* by this tool: a
+violation is fatal and exits ``4``.
+
+Everything else in a source document is only **probed**
+(:func:`probe_source_document`). The pipeline enforces a second, larger set of
+source-document rules before it assembles a report (``meta``, ``selection``,
+``methodology``, ``market_data``, ``knowledge_bites``, ``follow_up_plan``, and
+the whole report contract). Those rules are *not* re-implemented here as a
+pass/fail gate, because a document the pipeline cannot render must still be
+reviewable. The probe mirrors them and registers every finding as an anomaly,
+so a reviewer sees the conflict instead of a silent omission.
+
+The checklist therefore **never** states that a source document satisfies the
+complete source-document contract. The scope is stated explicitly in the
+output header.
+
 Usage
 -----
     python scripts/input_fidelity_review.py --input <source.json> [--out <path>]
@@ -79,10 +97,12 @@ Exit codes
 ----------
 ``0``  checklist written
 ``2``  input file missing or not valid JSON (no file is produced)
-``4``  the input violates the Event Contract (no file is produced)
+``4``  the input violates the **Event Contract** (no file is produced)
 
 There is deliberately no exit code ``3``: this tool has no word budget, and
-it never calls the renderer.
+it never calls the renderer. Exit code ``4`` means exactly one thing — the
+Event Contract was violated; it is not a statement about the rest of the
+source document.
 """
 
 from __future__ import annotations
@@ -108,7 +128,7 @@ SRC_DIR = REPO_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from contracts.evidence import ContractError  # noqa: E402
+from contracts.evidence import ContractError, non_empty_str  # noqa: E402
 from contracts.event import validate_events  # noqa: E402
 
 # --------------------------------------------------------------------------
@@ -124,12 +144,31 @@ REVIEW_STATUS = "NOT_REVIEWED"
 #: Render label for a field that reaches no tab body.
 NOT_RENDERED = "否"
 
+#: What this tool validates. Only the Event Contract is enforced; every other
+#: source-document structure is probed (non-fatal) and reported as an anomaly.
+VALIDATION_SCOPE = "Event Contract（events[]）"
+
 #: Statement that must appear at the top of every checklist.
 NOT_VERIFICATION_NOTICE = (
     "**本清单不构成事实验证。** 文本出现在清单中，仅表示该内容按原样从输入 JSON "
     "逐字转录；不代表其正确、已验证或已通过人工核对。Confidence 与 Evidence 均为"
     "输入数据的自述标注，本工具未做任何核验。全部条目的核对状态恒为 "
     "`NOT_REVIEWED`。"
+)
+
+#: Statement that must appear at the top of every checklist, naming exactly
+#: what was validated and — more importantly — what was not. The tool checks
+#: the Event Contract and probes the rest; it must never be read as a claim
+#: that the whole source document satisfies the pipeline's contract.
+VALIDATION_SCOPE_NOTICE = (
+    "**校验范围**：本清单只对 **Event Contract**（`events[]`）执行强制校验，"
+    "违反即以退出码 4 终止。其余源文档结构（`meta` / `selection` / "
+    "`methodology` / `market_data` / `knowledge_bites` / `follow_up_plan`）"
+    "仅作**非致命探测**，探测到的冲突逐条登记在「异常与契约冲突登记」中，"
+    "既不中断输出，也不被当作通过。"
+    "**本工具不声明源文档整体符合 Pipeline 的完整契约**：报告契约（Tab 结构、"
+    "Item 形状、Confidence 枚举、Source 校验、DV-2~DV-8 引用规则）与每 Tab "
+    "500 词预算均不在本工具的校验范围内。"
 )
 
 _BACKTICK_RUN_RE = re.compile(r"`+")
@@ -198,6 +237,19 @@ def display_safe(text: str) -> str:
     input file name). Transcribed payloads never pass through this function.
     """
     return text.replace("`", "'").replace("\n", " ").replace("\r", " ")
+
+
+def identifier_class(value: str) -> str:
+    """Format class for a controlled identifier.
+
+    ``CI`` renders the value inline, which is only safe when the value
+    cannot break the inline code span or the line layout. Anything else is
+    degraded to a verbatim block — the same rule the event path already
+    applies to every value it emits. The distinction between "identifier"
+    and "free text" decides the *preferred* format; safety decides the
+    *actual* one.
+    """
+    return "CI" if inline_safe(value) else "FVB"
 
 
 def sha256_hex(data: bytes) -> str:
@@ -371,6 +423,190 @@ def derive_render_map(source: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def probe_source_document(source: Dict[str, Any]) -> List[Dict[str, str]]:
+    """Probe the **non-Event** structure of a source document.
+
+    The pipeline enforces a second, larger set of source-document rules
+    before it assembles a report. Those rules are *not* part of the Event
+    Contract, and this tool does not turn them into a gate: a document the
+    pipeline cannot render must still be reviewable here.
+
+    What this function does is **probe** them and register every finding as
+    an anomaly of kind ``SOURCE_STRUCTURE``, so a reviewer sees the conflict
+    instead of a silent omission. The probe mirrors the pipeline's own
+    checks; it never repairs anything, never judges a fact and never turns
+    a finding into a verdict.
+
+    Frozen sources (read-only, mirrored here — not imported):
+      * ``pipeline.py:373-387``  root / meta / meta field presence
+      * ``pipeline.py:391-401``  selection object and id-list shape
+      * ``pipeline.py:403-408``  methodology object
+      * ``pipeline.py:152-209``  market_data shape
+      * ``pipeline.py:212-257``  knowledge_bites shape
+      * ``pipeline.py:260-350``  follow_up_plan shape
+    """
+    anomalies: List[Dict[str, str]] = []
+
+    def flag(where: str, detail: str) -> None:
+        anomalies.append(
+            {
+                "kind": "SOURCE_STRUCTURE",
+                "where": where,
+                "reference": "-",
+                "detail": detail,
+            }
+        )
+
+    # --- meta -------------------------------------------------------------
+    meta = source.get("meta")
+    if not isinstance(meta, dict):
+        flag("meta", "meta 缺失或不是对象；Pipeline 要求 meta 为对象"
+                     "（pipeline.py:379-380）。")
+    else:
+        for field in ("run_date", "data_date", "data_mode"):
+            if meta.get(field) is None:
+                flag(f"meta.{field}",
+                     f"meta.{field} 缺失；Pipeline 要求该字段存在且非空"
+                     f"（pipeline.py:383-387）。")
+
+    # --- selection --------------------------------------------------------
+    selection = source.get("selection")
+    if not isinstance(selection, dict):
+        flag("selection", "selection 缺失或不是对象；Pipeline 要求 selection "
+                          "为对象（pipeline.py:391-392）。")
+    else:
+        for list_name in ("tab1_event_ids", "tab3_event_ids"):
+            ids = selection.get(list_name, [])
+            if not isinstance(ids, list):
+                flag(f"selection.{list_name}",
+                     f"selection.{list_name} 必须是 id 列表；Pipeline 会以 "
+                     f"ContractError 拒绝该文档（pipeline.py:80-96）。")
+                continue
+            seen: set = set()
+            for idx, event_id in enumerate(ids):
+                if not non_empty_str(event_id):
+                    flag(f"selection.{list_name}[{idx}]",
+                         f"selection.{list_name}[{idx}] 必须是非空字符串 id；"
+                         f"Pipeline 会以 ContractError 拒绝该文档。")
+                    continue
+                if event_id in seen:
+                    flag(f"selection.{list_name}[{idx}]",
+                         f"selection.{list_name} 重复了同一个 event id；"
+                         f"Pipeline 会以 ContractError 拒绝该文档。")
+                seen.add(event_id)
+
+    # --- methodology ------------------------------------------------------
+    if not isinstance(source.get("methodology"), dict):
+        flag("methodology", "methodology 缺失或不是对象；Pipeline 要求 "
+                            "methodology 为对象，且不得由流水线代写"
+                            "（pipeline.py:403-408）。")
+
+    # --- market_data ------------------------------------------------------
+    market_data = source.get("market_data")
+    if market_data is not None:
+        if not isinstance(market_data, dict):
+            flag("market_data", "market_data 存在但不是对象；Pipeline 会以 "
+                                "ContractError 拒绝该文档（pipeline.py:160）。")
+        else:
+            items = market_data.get("items")
+            reason = market_data.get("unavailable_reason")
+            if items is not None and not isinstance(items, list):
+                flag("market_data.items", "market_data.items 存在但不是列表；"
+                                          "Pipeline 会以 ContractError 拒绝该文档。")
+            elif isinstance(items, list) and items:
+                if reason is not None:
+                    flag("market_data.unavailable_reason",
+                         "market_data.items 携带数据时 unavailable_reason 必须"
+                         "为 null；Pipeline 会以 ContractError 拒绝该文档"
+                         "（pipeline.py:189-192）。")
+                for idx, item in enumerate(items):
+                    if not isinstance(item, dict):
+                        flag(f"market_data.items[{idx}]",
+                             "行情项不是对象；Pipeline 会以 ContractError "
+                             "拒绝该文档（pipeline.py:195-196）。")
+                    elif not non_empty_str(item.get("text")):
+                        flag(f"market_data.items[{idx}].text",
+                             "行情项缺少 text；Pipeline 要求其非空"
+                             "（pipeline.py:197-198）。")
+            elif reason is not None and not non_empty_str(reason):
+                flag("market_data.unavailable_reason",
+                     "缺少行情数据时 unavailable_reason 必须是非空字符串；"
+                     "Pipeline 会以 ContractError 拒绝该文档"
+                     "（pipeline.py:171-176）。")
+
+    # --- knowledge_bites --------------------------------------------------
+    knowledge_bites = source.get("knowledge_bites")
+    if knowledge_bites is not None:
+        if not isinstance(knowledge_bites, list):
+            flag("knowledge_bites", "knowledge_bites 存在但不是列表；Pipeline "
+                                    "会以 ContractError 拒绝该文档。")
+        elif not knowledge_bites:
+            flag("knowledge_bites", "knowledge_bites 为空列表；Pipeline 要求"
+                                    "至少一个 Knowledge Bite（pipeline.py:220-225）。")
+        else:
+            for idx, bite in enumerate(knowledge_bites):
+                if not isinstance(bite, dict):
+                    flag(f"knowledge_bites[{idx}]",
+                         "Knowledge Bite 不是对象；Pipeline 会以 ContractError "
+                         "拒绝该文档（pipeline.py:227-229）。")
+                    continue
+                for field in ("cognitive_unit", "why_it_matters"):
+                    if not non_empty_str(bite.get(field)):
+                        flag(f"knowledge_bites[{idx}].{field}",
+                             f"knowledge_bites[{idx}].{field} 缺失或为空；"
+                             f"Pipeline 要求其非空（pipeline.py:230-233）。")
+                event_ids = bite.get("event_ids")
+                if event_ids is None:
+                    continue
+                if not isinstance(event_ids, list) or not event_ids:
+                    flag(f"knowledge_bites[{idx}].event_ids",
+                         "event_ids 存在时必须是非空列表；Pipeline 会以 "
+                         "ContractError 拒绝该文档（pipeline.py:234-240）。")
+                    continue
+                for eidx, event_id in enumerate(event_ids):
+                    if not non_empty_str(event_id):
+                        flag(f"knowledge_bites[{idx}].event_ids[{eidx}]",
+                             "Knowledge Bite 的 event id 必须是非空字符串；"
+                             "Pipeline 会以 ContractError 拒绝该文档"
+                             "（pipeline.py:241-246）。")
+
+    # --- follow_up_plan ---------------------------------------------------
+    follow_up_plan = source.get("follow_up_plan")
+    if follow_up_plan is not None:
+        if not isinstance(follow_up_plan, list):
+            flag("follow_up_plan", "follow_up_plan 存在但不是列表；Pipeline 会"
+                                    "以 ContractError 拒绝该文档"
+                                    "（pipeline.py:281-284）。")
+        else:
+            seen_plan: set = set()
+            for idx, entry in enumerate(follow_up_plan):
+                if not isinstance(entry, dict):
+                    flag(f"follow_up_plan[{idx}]",
+                         "跟踪条目不是对象；Pipeline 会以 ContractError 拒绝"
+                         "该文档（pipeline.py:287-288）。")
+                    continue
+                event_id = entry.get("event_id")
+                if not non_empty_str(event_id):
+                    flag(f"follow_up_plan[{idx}].event_id",
+                         "跟踪条目缺少 event_id；Pipeline 要求其非空"
+                         "（pipeline.py:289-290）。")
+                else:
+                    if event_id in seen_plan:
+                        flag(f"follow_up_plan[{idx}].event_id",
+                             "follow_up_plan 重复了同一个 event id；Pipeline "
+                             "会以 ContractError 拒绝该文档"
+                             "（pipeline.py:291-293）。")
+                    seen_plan.add(event_id)
+                for field in ("action", "next_check"):
+                    if not non_empty_str(entry.get(field)):
+                        flag(f"follow_up_plan[{idx}].{field}",
+                             f"follow_up_plan[{idx}].{field} 缺失或为空；"
+                             f"Pipeline 要求其显式提供且不得由工具生成"
+                             f"（pipeline.py:294-303）。")
+
+    return anomalies
+
+
 def event_field_visibility(
     event: Dict[str, Any],
     slots: Sequence[Dict[str, Any]],
@@ -512,10 +748,21 @@ def collect_event_payloads(
                         visibility.get(field, NOT_RENDERED),
                     )
 
-    for field in ("supersedes", "verification_criteria"):
-        value = event.get(field)
-        if isinstance(value, str):
-            add(f"{prefix}.{field}", value, visibility.get(field, NOT_RENDERED))
+    # ``supersedes`` is an event id reference — a controlled identifier.
+    supersedes = event.get("supersedes")
+    if isinstance(supersedes, str):
+        add(f"{prefix}.supersedes", supersedes,
+            visibility.get("supersedes", NOT_RENDERED))
+
+    # ``verification_criteria`` is free text: it states *how* a claim can be
+    # checked, in the researcher's own words. It always gets its own
+    # verbatim block, however short it is — a length test must never decide
+    # whether a free-text field is transcribed faithfully.
+    criteria = event.get("verification_criteria")
+    if isinstance(criteria, str):
+        add(f"{prefix}.verification_criteria", criteria,
+            visibility.get("verification_criteria", NOT_RENDERED),
+            force_block=True)
 
     sources = event.get("sources")
     if isinstance(sources, list):
@@ -591,7 +838,7 @@ def collect_knowledge_bite_payloads(
                 {
                     "path": f"{prefix}.{field}",
                     "value": value,
-                    "class": "CI",
+                    "class": identifier_class(value),
                     "render": "Tab 4",
                 }
             )
@@ -604,7 +851,11 @@ def collect_knowledge_bite_payloads(
                     {
                         "path": f"{prefix}.source.{field}",
                         "value": value,
-                        "class": "FVB" if field != "provider_tier" else "CI",
+                        "class": (
+                            identifier_class(value)
+                            if field == "provider_tier"
+                            else "FVB"
+                        ),
                         "render": "Tab 4",
                     }
                 )
@@ -617,7 +868,7 @@ def collect_knowledge_bite_payloads(
                 {
                     "path": f"{prefix}.event_ids[{idx}]",
                     "value": value,
-                    "class": "CI" if value in known else "FVB",
+                    "class": identifier_class(value) if value in known else "FVB",
                     "render": NOT_RENDERED,
                 }
             )
@@ -628,6 +879,10 @@ def collect_follow_up_payloads(entry: Dict[str, Any], plan_pos: int) -> List[Dic
     """Collect the transcribed fields of one follow-up plan entry."""
     prefix = f"follow_up_plan[{plan_pos}]"
     payloads: List[Dict[str, Any]] = []
+    # ``action`` and ``linked_theme`` are the researcher's own words and
+    # ``next_check`` is only constrained to "a non-empty string" by the
+    # contract — all three are therefore transcribed as free text, never
+    # decided by their length.
     for field in ("action", "next_check", "linked_theme"):
         value = entry.get(field)
         if isinstance(value, str):
@@ -635,7 +890,7 @@ def collect_follow_up_payloads(entry: Dict[str, Any], plan_pos: int) -> List[Dic
                 {
                     "path": f"{prefix}.{field}",
                     "value": value,
-                    "class": "FVB" if field != "next_check" else "CI",
+                    "class": "FVB",
                     "render": "Tab 5",
                 }
             )
@@ -645,7 +900,7 @@ def collect_follow_up_payloads(entry: Dict[str, Any], plan_pos: int) -> List[Dic
             {
                 "path": f"{prefix}.event_id",
                 "value": event_id,
-                "class": "CI",
+                "class": identifier_class(event_id),
                 "render": NOT_RENDERED,
             }
         )
@@ -681,7 +936,11 @@ def collect_market_payloads(market_data: Any) -> List[Dict[str, Any]]:
                             {
                                 "path": f"market_data.items[{idx}].source.{field}",
                                 "value": value,
-                                "class": "FVB" if field != "provider_tier" else "CI",
+                                "class": (
+                                    identifier_class(value)
+                                    if field == "provider_tier"
+                                    else "FVB"
+                                ),
                                 "render": "Tab 2",
                             }
                         )
@@ -701,7 +960,7 @@ def collect_market_payloads(market_data: Any) -> List[Dict[str, Any]]:
                         {
                             "path": f"market_data.items[{idx}].{field}",
                             "value": value,
-                            "class": "CI",
+                            "class": identifier_class(value),
                             "render": "Tab 2",
                         }
                     )
@@ -785,12 +1044,13 @@ def build_checklist(source: Dict[str, Any], input_meta: Dict[str, Any]) -> str:
     events = source.get("events") or []
     render_map = derive_render_map(source)
     positions = render_map["positions"]
-    anomalies = render_map["anomalies"]
+    anomalies = list(render_map["anomalies"]) + probe_source_document(source)
     known_event_ids = set(render_map["index"].keys())
 
     out: List[str] = []
     out.append(f"# Research Input Fidelity Review — {input_meta.get('data_date', '(未提供)')}\n")
     out.append(f"> {NOT_VERIFICATION_NOTICE}\n")
+    out.append(f"> {VALIDATION_SCOPE_NOTICE}\n")
     out.append("\n---\n")
 
     # ---- header table ----------------------------------------------------
@@ -800,6 +1060,7 @@ def build_checklist(source: Dict[str, Any], input_meta: Dict[str, Any]) -> str:
     out.append(f"| 输入文件 | `{display_safe(input_meta.get('file_name', ''))}` |")
     out.append(f"| 输入 SHA256 | `{input_meta.get('sha256', '')}` |")
     out.append(f"| 输入字节数 | {input_meta.get('byte_count', 0)} |")
+    out.append(f"| 校验范围 | {VALIDATION_SCOPE}（强制）｜其余源文档结构仅非致命探测 |")
     out.append(f"| run_date | `{input_meta.get('run_date', '(未提供)')}` |")
     out.append(f"| data_date | `{input_meta.get('data_date', '(未提供)')}` |")
     out.append(f"| data_mode | `{input_meta.get('data_mode', '(未提供)')}` |")
@@ -909,6 +1170,12 @@ def build_checklist(source: Dict[str, Any], input_meta: Dict[str, Any]) -> str:
 
     # ---- anomalies -------------------------------------------------------
     out.append("## 异常与契约冲突登记\n")
+    out.append(
+        "> 本节登记的是**输入事实**，不是判定结果。`SOURCE_STRUCTURE` 为源文档"
+        "非 Event 结构的**非致命探测**结果；其余为引用关系冲突。"
+        "两类都**不表示**本工具已判定事实真伪，也不表示源文档整体符合 "
+        "Pipeline 的完整契约。\n"
+    )
     if anomalies:
         out.append("| 类型 | 位置 | 引用 | 说明 |")
         out.append("|---|---|---|---|")
@@ -919,8 +1186,8 @@ def build_checklist(source: Dict[str, Any], input_meta: Dict[str, Any]) -> str:
             )
         out.append("")
         out.append(
-            "> 以上为源文档层的契约冲突。工具只登记事实，不判定对错，也不中断输出；"
-            "Pipeline 在生成报告时会以 ContractError 拒绝这些文档。\n"
+            "> Pipeline 在生成报告时会以 ContractError 拒绝这些文档；本工具"
+            "只登记事实，不判定对错，也不中断输出。\n"
         )
     else:
         out.append("无异常登记项。\n")
@@ -1046,12 +1313,18 @@ def main(argv: Optional[List[str]] = None) -> int:
             "for a Daily Briefing source document. The checklist transcribes "
             "every field verbatim and states the expected render position of "
             "each one. It does NOT verify facts, adjust confidence or modify "
-            "the input."
+            "the input. "
+            "Validation scope: only the Event Contract (events[]) is enforced "
+            "and a violation exits 4; every other source-document structure is "
+            "probed and reported as an anomaly, so a document the pipeline "
+            "cannot render can still be reviewed."
         ),
         epilog=(
             "Exit codes: 0 = checklist written | 2 = input missing or invalid "
-            "JSON | 4 = Event Contract violation. There is no exit code 3: "
-            "this tool has no word budget and never calls the renderer."
+            "JSON | 4 = Event Contract violation (events[] only). There is no "
+            "exit code 3: this tool has no word budget and never calls the "
+            "renderer. The complete source-document contract (report "
+            "contract, tab shapes, word budget) is NOT validated by this tool."
         ),
     )
     parser.add_argument("--input", required=True, help="Path to the source JSON")
@@ -1086,7 +1359,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         validate_events(source.get("events"), "events")
     except ContractError as exc:
-        print(f"error: contract violation: {exc}", file=sys.stderr)
+        print(f"error: event contract violation: {exc}", file=sys.stderr)
         return 4
 
     meta = source.get("meta")
@@ -1117,11 +1390,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8", newline="\n") as handle:
         handle.write(checklist)
+    anomalies = derive_render_map(source)["anomalies"]
+    anomaly_count = len(anomalies) + len(probe_source_document(source))
     print(
         f"wrote {out_path}  "
         f"({len(checklist.encode('utf-8'))} bytes, "
         f"events={len(source.get('events') or [])}, "
-        f"data_date={data_date})"
+        f"data_date={data_date}, "
+        f"validation={VALIDATION_SCOPE}, anomalies={anomaly_count})"
     )
     return 0
 
