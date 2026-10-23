@@ -79,9 +79,30 @@ _LABEL_RE = re.compile(r"^\*\*(?P<path>[^*]+)\*\* — 逐字转录")
 _INLINE_RE = re.compile(r"^- \*\*(?P<path>[^*]+)\*\*: `(?P<value>.*)`$")
 
 #: A transcribed field path always starts with one of the input blocks.
+#: The block name is followed by an index (``events[0].title``) or by a dot
+#: (``market_data.unavailable_reason``) — both forms must be accepted.
 _FIELD_PATH_RE = re.compile(
-    r"^(?:events|knowledge_bites|follow_up_plan|market_data)[\[.]"
+    r"^(?:events|knowledge_bites|follow_up_plan|market_data)(?:\[|\.)"
 )
+
+#: A row of the tool's own checklist table: the path the tool says it
+#: transcribed. The table is generated from the payload list, independently
+#: of the rendered prose, so comparing it with the scanner's recovered set
+#: proves the scanner sees everything the tool claims to have written — and
+#: that the tool writes everything it claims.
+_CHECKLIST_ROW_RE = re.compile(
+    r"^\| `(?P<path>[^`]+)` \| (?P<render>[^|]*) \| `NOT_REVIEWED` \|$"
+)
+
+
+def scan_checklist_table(text: str) -> Dict[str, str]:
+    """Recover the field paths the tool declared in its checklist tables."""
+    rows: Dict[str, str] = {}
+    for line in text.split("\n"):
+        match = _CHECKLIST_ROW_RE.match(line)
+        if match:
+            rows[match.group("path")] = match.group("render").strip()
+    return rows
 
 
 def scan_checklist(text: str) -> Tuple[Dict[str, str], Dict[str, str], List[str]]:
@@ -373,6 +394,33 @@ def test_no_field_is_dropped_or_duplicated() -> None:
     # Ownership: every path resolves against the source document.
     for path in paths:
         resolve(source, path)
+
+
+def test_scanner_covers_every_declared_field_path() -> None:
+    """The scanner must see exactly what the tool says it transcribed.
+
+    The checklist table is built from the payload list, the prose from the
+    same payloads. Comparing the two sets proves both directions: the tool
+    writes every path it declares, and the scanner recovers every path the
+    tool wrote. A filter that silently narrows — the way an over-tight
+    path pattern once hid 96 inline fields from the fidelity assertions —
+    breaks this test instead of passing quietly.
+    """
+    source = load_fixture()
+    text = render_fixture(source)
+    blocks, inline, _ = scan_checklist(text)
+    declared = scan_checklist_table(text)
+    assert declared, "the checklist declares no field path"
+    recovered = set(blocks) | set(inline)
+    assert recovered == set(declared), (
+        "the scanner and the checklist table disagree: "
+        f"only in table {sorted(set(declared) - recovered)[:5]}, "
+        f"only in prose {sorted(recovered - set(declared))[:5]}"
+    )
+    # The inline set must not be a rounding error — a filter that only
+    # matched a handful of paths would still satisfy the equality above
+    # if the tool wrote everything inline, so pin the shape too.
+    assert len(inline) >= 20, f"implausibly few inline fields: {len(inline)}"
 
 
 def test_expected_paths_are_all_present() -> None:
@@ -695,6 +743,277 @@ def test_cli_default_output_name_uses_data_date(tmp_path: Path) -> None:
 
 
 # --------------------------------------------------------------------------
+# R1-01 — Contract validation boundary
+# --------------------------------------------------------------------------
+
+#: Phrases that would claim the *complete* source-document contract was
+#: checked. The tool enforces the Event Contract and probes the rest; it
+#: must never be read as a full source-document gate.
+FORBIDDEN_FULL_PASS_PHRASES = (
+    "完整源文档契约通过",
+    "源文档契约校验通过",
+    "契约校验通过",
+    "全部校验通过",
+    "源文档契约已通过",
+    "完整源文档契约已通过",
+)
+
+
+def _broken_non_event_source() -> Dict[str, Any]:
+    """A source document whose non-Event structure is wrong in every way."""
+    source = make_source([make_event("evt-20261023-broken")])
+    source.pop("meta")
+    source["selection"] = "not-an-object"
+    source.pop("methodology")
+    source["market_data"] = ["not", "an", "object"]
+    source["knowledge_bites"] = []
+    source["follow_up_plan"] = {"not": "a list"}
+    return source
+
+
+def test_validation_scope_is_declared_in_the_output() -> None:
+    """R1-01: the checklist states exactly what was validated."""
+    text = render_fixture()
+    assert "校验范围" in text
+    assert "Event Contract" in text
+    # The scope statement must name both halves: what is enforced and what
+    # is only probed.
+    assert "强制校验" in text
+    assert "非致命探测" in text
+    # The report contract and the word budget are explicitly out of scope.
+    assert "500 词预算" in text
+    assert "报告契约" in text
+
+
+def test_output_never_claims_a_complete_source_document_pass() -> None:
+    """R1-01: a broken non-Event structure is never called a pass."""
+    text = TOOL.build_checklist(_broken_non_event_source(), input_meta())
+    for phrase in FORBIDDEN_FULL_PASS_PHRASES:
+        assert phrase not in text, f"forbidden full-pass phrase: {phrase}"
+
+
+def test_probe_registers_non_event_structure_conflicts() -> None:
+    """R1-01: the probe finds every broken non-Event block."""
+    source = _broken_non_event_source()
+    anomalies = TOOL.probe_source_document(source)
+    where = {anomaly["where"] for anomaly in anomalies}
+    for expected in (
+        "meta",
+        "selection",
+        "methodology",
+        "market_data",
+        "knowledge_bites",
+        "follow_up_plan",
+    ):
+        assert expected in where, f"the probe missed {expected}"
+    assert all(anomaly["kind"] == "SOURCE_STRUCTURE" for anomaly in anomalies)
+
+
+def test_broken_non_event_structure_still_produces_a_checklist(tmp_path: Path) -> None:
+    """R1-01: a document the pipeline cannot render is still reviewable."""
+    path = tmp_path / "broken.json"
+    path.write_text(
+        json.dumps(_broken_non_event_source(), ensure_ascii=False), encoding="utf-8"
+    )
+    out = tmp_path / "review.md"
+    result = _run_cli(["--input", str(path), "--out", str(out)], tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert out.is_file()
+    text = out.read_text(encoding="utf-8")
+    assert "SOURCE_STRUCTURE" in text
+    assert "Research Input Fidelity Review" in text
+
+
+def test_probe_is_silent_on_a_valid_document() -> None:
+    """R1-01: a sound document produces no structure anomaly.
+
+    The fixture carries a dangling Knowledge Bite reference — that is a
+    *reference* conflict, not a structure problem, and the probe must not
+    confuse the two.
+    """
+    source = load_fixture()
+    assert TOOL.probe_source_document(source) == []
+    kinds = {anomaly["kind"] for anomaly in TOOL.derive_render_map(source)["anomalies"]}
+    assert "DANGLING_REFERENCE" in kinds
+    assert "SOURCE_STRUCTURE" not in kinds
+
+
+def test_event_contract_violation_remains_fatal(tmp_path: Path) -> None:
+    """R1-01: the Event Contract is still the one fatal check."""
+    source = make_source([make_event("not-an-event-id")])
+    path = tmp_path / "bad.json"
+    path.write_text(json.dumps(source, ensure_ascii=False), encoding="utf-8")
+    out = tmp_path / "review.md"
+    result = _run_cli(["--input", str(path), "--out", str(out)], tmp_path)
+    assert result.returncode == 4
+    assert not out.exists()
+    assert "event contract violation" in result.stderr
+
+
+# --------------------------------------------------------------------------
+# R1-02 — Free-text fidelity consistency
+# --------------------------------------------------------------------------
+
+#: Fields whose value is the researcher's own words. The contract only asks
+#: for a non-empty string, so the length of the value must never decide
+#: whether it is transcribed faithfully.
+FREE_TEXT_FIELDS = {
+    "title",
+    "summary",
+    "verification_criteria",
+    "action",
+    "next_check",
+    "linked_theme",
+    "cognitive_unit",
+    "why_it_matters",
+    "text",
+    "locator",
+    "name",
+    "provider",
+    "themes",
+    "companies",
+    "unavailable_reason",
+}
+
+#: Fields the contract closes down to a fixed vocabulary or format.
+IDENTIFIER_FIELDS = {
+    "event_id",
+    "assertion_type",
+    "status",
+    "confidence",
+    "estimated",
+    "occurred_at",
+    "collected_at",
+    "data_date",
+    "derived_from",
+    "related_event_ids",
+    "supersedes",
+    "provider_tier",
+    "tier",
+    "outcome",
+}
+
+
+def _last_field(path: str) -> str:
+    """The field a checklist path points at, without any list index."""
+    return re.sub(r"\[\d+\]$", "", path.split(".")[-1])
+
+
+def test_field_format_policy_is_free_text_versus_identifier() -> None:
+    """R1-02: free text is never inline, identifiers are never a block."""
+    source = load_fixture()
+    blocks, inline, _ = scan_checklist(render_fixture(source))
+    all_paths = set(blocks) | set(inline)
+    assert all_paths
+
+    known_event_ids = {event["event_id"] for event in source["events"]}
+    unclassified: List[str] = []
+    for path in sorted(all_paths):
+        field = _last_field(path)
+        if field == "event_ids":
+            # A Knowledge Bite reference that resolves to a known event is
+            # an identifier; one that resolves to nothing is degraded to a
+            # block (design §5.4 fallback). The dangling-ness itself is
+            # reported in the reverse-reference table.
+            if resolve(source, path) in known_event_ids:
+                assert path in inline, f"known reference must be inline: {path}"
+            else:
+                assert path in blocks, f"dangling reference must be a block: {path}"
+            continue
+        if field in FREE_TEXT_FIELDS:
+            assert path in blocks, f"free text must be a verbatim block: {path}"
+            assert path not in inline, f"free text must not be inline: {path}"
+        elif field in IDENTIFIER_FIELDS:
+            assert path in inline, f"identifier must be inline: {path}"
+            assert path not in blocks, f"identifier must not be a block: {path}"
+        else:
+            unclassified.append(path)
+    assert not unclassified, f"paths not covered by the format policy: {unclassified}"
+
+
+def test_verification_criteria_is_always_a_verbatim_block() -> None:
+    """R1-02: a short verification criterion is still free text."""
+    short = "待核实"
+    event = make_event("evt-20261023-criteria", verification_criteria=short)
+    source = make_source([event])
+    blocks, inline, _ = scan_checklist(TOOL.build_checklist(source, input_meta()))
+    assert "events[0].verification_criteria" in blocks
+    assert "events[0].verification_criteria" not in inline
+    assert blocks["events[0].verification_criteria"] == short
+
+
+def test_next_check_is_transcribed_as_free_text() -> None:
+    """R1-02: the contract only constrains next_check to a non-empty string."""
+    event = make_event("evt-20261023-next-check", status="open")
+    source = make_source(
+        [event],
+        follow_up_plan=[
+            {
+                "event_id": "evt-20261023-next-check",
+                "action": "a",
+                "next_check": "2026-10-30",
+            }
+        ],
+    )
+    blocks, inline, _ = scan_checklist(TOOL.build_checklist(source, input_meta()))
+    assert "follow_up_plan[0].next_check" in blocks
+    assert "follow_up_plan[0].next_check" not in inline
+    assert blocks["follow_up_plan[0].next_check"] == "2026-10-30"
+
+
+@pytest.mark.parametrize("payload", ["待核实", "a", "短", "x" * 200])
+def test_short_free_text_survives_unchanged(payload: str) -> None:
+    """R1-02: length never decides whether free text is transcribed."""
+    event = make_event("evt-20261023-short", verification_criteria=payload)
+    source = make_source([event])
+    blocks, _, _ = scan_checklist(TOOL.build_checklist(source, input_meta()))
+    assert blocks["events[0].verification_criteria"] == payload
+
+
+def test_no_inline_value_can_carry_a_backtick() -> None:
+    """R1-02: the inline form is only used when it cannot break the span."""
+    _, inline, _ = scan_checklist(render_fixture())
+    assert inline
+    for path, value in inline.items():
+        assert "`" not in value, f"inline value carries a backtick: {path}"
+        assert "\n" not in value and "\r" not in value
+
+
+def test_hostile_non_event_values_do_not_break_the_checklist() -> None:
+    """R1-02: hostile text outside the event block is degraded, not inline."""
+    payload = "含 ` 反引号与换行\n第二行"
+    source = make_source(
+        [make_event("evt-20261023-hostile-non-event")],
+        knowledge_bites=[
+            {
+                "cognitive_unit": "c",
+                "why_it_matters": "w",
+                "event_ids": [],
+                "source": {"name": "s", "provider_tier": "P0", "locator": "l"},
+                "confidence": payload,
+                "estimated": False,
+            }
+        ],
+        market_data={
+            "items": [
+                {
+                    "text": "t",
+                    "source": {"name": "s", "provider_tier": "P0", "locator": "l"},
+                    "confidence": payload,
+                    "estimated": False,
+                }
+            ]
+        },
+    )
+    blocks, inline, order = scan_checklist(TOOL.build_checklist(source, input_meta()))
+    assert blocks["knowledge_bites[0].confidence"] == payload
+    assert blocks["market_data.items[0].confidence"] == payload
+    assert "knowledge_bites[0].confidence" not in inline
+    assert "market_data.items[0].confidence" not in inline
+    assert len(order) == len(set(order)), "a hostile value broke the structure"
+
+
+# --------------------------------------------------------------------------
 # X-series: cross-validation against the existing pipeline
 # --------------------------------------------------------------------------
 
@@ -793,3 +1112,41 @@ def test_pipeline_rejects_the_dangling_knowledge_bite_reference() -> None:
 
     with pytest.raises(ContractError):
         build_document(load_fixture())
+
+
+def test_probe_anomalies_are_real_pipeline_conflicts() -> None:
+    """R1-01 (X): every probe finding is a conflict the pipeline rejects.
+
+    The probe must not invent problems — if the pipeline accepts a document
+    the probe has to stay silent, and if the pipeline rejects it the probe
+    has to say where.
+    """
+    from contracts.evidence import ContractError
+    from daily_briefing.pipeline import build_document
+
+    cases = {
+        "meta": lambda s: s.pop("meta"),
+        "selection": lambda s: s.__setitem__("selection", "not-an-object"),
+        "methodology": lambda s: s.pop("methodology"),
+        "market_data": lambda s: s.__setitem__("market_data", []),
+        "knowledge_bites": lambda s: s.__setitem__("knowledge_bites", []),
+        "follow_up_plan": lambda s: s.__setitem__("follow_up_plan", {}),
+    }
+    for name, mutate in cases.items():
+        source = copy.deepcopy(_pipeline_renderable_fixture())
+        mutate(source)
+        anomalies = TOOL.probe_source_document(source)
+        assert any(
+            anomaly["where"] == name for anomaly in anomalies
+        ), f"the probe missed {name}"
+        with pytest.raises(ContractError):
+            build_document(source)
+
+
+def test_probe_reports_nothing_for_a_document_the_pipeline_accepts() -> None:
+    """R1-01 (X): no false alarms on a document the pipeline accepts."""
+    from daily_briefing.pipeline import build_document
+
+    source = _pipeline_renderable_fixture()
+    build_document(source)  # the pipeline accepts it
+    assert TOOL.probe_source_document(source) == []
