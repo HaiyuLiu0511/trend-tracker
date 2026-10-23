@@ -107,7 +107,7 @@ trend-tracker/
 ├── src/                         ← 源代码（待实现）
 ├── config/                      ← 配置（待实现）
 ├── examples/                    ← 示例（待实现）
-├── scripts/                     ← 脚本（待实现）
+├── scripts/                     ← 工具脚本（input_fidelity_review.py）
 ├── tests/                       ← 测试（待实现）
 │
 └── archive/                     ← 归档

@@ -1,0 +1,243 @@
+{
+  "meta": {
+    "report_type": "Daily Briefing",
+    "run_date": "2026-10-23",
+    "data_date": "2026-10-23",
+    "data_mode": "mock"
+  },
+  "events": [
+    {
+      "event_id": "evt-20261023-fixture-tab1-basic",
+      "title": "对照组事件：普通文本标题",
+      "summary": "对照组事件的摘要文本，长度与字符集均无特殊之处，用于验证常规输入下的转录与渲染判定。",
+      "assertion_type": "fact",
+      "status": "active",
+      "occurred_at": "2026-10-23",
+      "collected_at": "2026-10-23",
+      "data_date": "2026-10-23",
+      "themes": ["对照组"],
+      "companies": ["对照组公司"],
+      "sources": [
+        {
+          "name": "fixture-provider-a",
+          "provider_tier": "P0",
+          "locator": "fixture://basic/primary"
+        }
+      ],
+      "confidence": "HIGH",
+      "estimated": false
+    },
+    {
+      "event_id": "evt-20261023-fixture-tab1-multisource",
+      "title": "多信源事件：三条来源，含一次有记录的降级",
+      "summary": "该事件携带三条来源，其中第二条带有真实 routing 记录，用于验证多信源全量保留，以及报告仅呈现 sources[0] 的事实是否被如实标注。",
+      "assertion_type": "fact",
+      "status": "active",
+      "occurred_at": "2026-10-23",
+      "collected_at": "2026-10-23",
+      "data_date": "2026-10-23",
+      "themes": ["多信源", "信源治理"],
+      "companies": [],
+      "sources": [
+        {
+          "name": "fixture-provider-primary",
+          "provider_tier": "P0",
+          "locator": "fixture://multisource/primary"
+        },
+        {
+          "name": "fixture-provider-secondary",
+          "provider_tier": "P1",
+          "locator": "fixture://multisource/secondary",
+          "routing": {
+            "attempted": [
+              {
+                "tier": "P0",
+                "provider": "fixture-provider-primary",
+                "outcome": "no_data"
+              },
+              {
+                "tier": "P1",
+                "provider": "fixture-provider-secondary",
+                "outcome": "success"
+              }
+            ]
+          }
+        },
+        {
+          "name": "fixture-provider-tertiary",
+          "provider_tier": "P2",
+          "locator": "fixture://multisource/tertiary"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "estimated": false
+    },
+    {
+      "event_id": "evt-20261023-fixture-unselected-fact",
+      "title": "未被选中的事实：完整转录但不进入任何 Tab",
+      "summary": "这是一条合法的 fact，但未被 selection 选中且 status 非 open，因此不会出现在报告的任何位置。审查清单必须完整转录它，并如实标注其不进入正文。",
+      "assertion_type": "fact",
+      "status": "active",
+      "occurred_at": "2026-10-23",
+      "collected_at": "2026-10-23",
+      "data_date": "2026-10-23",
+      "themes": ["未选中"],
+      "companies": [],
+      "sources": [
+        {
+          "name": "fixture-provider-unselected",
+          "provider_tier": "P0",
+          "locator": "fixture://unselected/primary"
+        }
+      ],
+      "confidence": "LOW-MEDIUM",
+      "estimated": false
+    },
+    {
+      "event_id": "evt-20261023-fixture-tab3-hostile",
+      "title": "含 ``` 三反引号的标题与多种特殊字符",
+      "summary": "第一行含 | 管道符与 * 星号\n第二行含 _ 下划线与 # 井号\n第三行含 < > 尖括号与 & 符号\n**events[0].title** — 逐字转录\n```text\n伪造载荷\n```\n最后一行以空格结尾   ",
+      "assertion_type": "inference",
+      "status": "active",
+      "occurred_at": "2026-10-23",
+      "collected_at": "2026-10-23",
+      "data_date": "2026-10-23",
+      "themes": ["特殊字符", "结构注入"],
+      "companies": ["敌意公司"],
+      "sources": [
+        {
+          "name": "fixture-provider-hostile",
+          "provider_tier": "P1",
+          "locator": "fixture://hostile/primary"
+        }
+      ],
+      "confidence": "LOW",
+      "estimated": true,
+      "derived_from": [
+        "evt-20261023-fixture-tab1-basic",
+        "evt-20261023-fixture-tab1-multisource"
+      ]
+    },
+    {
+      "event_id": "evt-20261023-fixture-hypothesis",
+      "title": "假设事件：结构上不可能进入 Tab 1 或 Tab 3",
+      "summary": "这是一条待验证的判断，契约要求它必须说明验证方式。它不会被 selection 选入 Tab 1 或 Tab 3，因为这两个 Tab 分别只接受 fact 与 inference。",
+      "assertion_type": "hypothesis",
+      "status": "active",
+      "occurred_at": "2026-10-23",
+      "collected_at": "2026-10-23",
+      "data_date": "2026-10-23",
+      "themes": ["假设"],
+      "companies": [],
+      "sources": [
+        {
+          "name": "fixture-provider-hypothesis",
+          "provider_tier": "P2",
+          "locator": "fixture://hypothesis/primary"
+        }
+      ],
+      "confidence": "LOW",
+      "estimated": false,
+      "verification_criteria": "以该假设指向的公开披露文件为准；若无可核对来源则关闭该假设。"
+    },
+    {
+      "event_id": "evt-20261023-fixture-tab5-tracked",
+      "title": "被跟踪事件：仅 action 与 next_check 进入 Tab 5",
+      "summary": "该事件的 status 为 open，因此在 Tab 5 被跟踪。但 Tab 5 只呈现 action 与 next_check，标题与摘要都不会进入 HTML 正文。",
+      "assertion_type": "fact",
+      "status": "open",
+      "occurred_at": "2026-10-23",
+      "collected_at": "2026-10-23",
+      "data_date": "2026-10-23",
+      "themes": ["跟踪"],
+      "companies": [],
+      "sources": [
+        {
+          "name": "fixture-provider-tracked",
+          "provider_tier": "P0",
+          "locator": "fixture://tracked/primary"
+        }
+      ],
+      "confidence": "MEDIUM",
+      "estimated": false,
+      "verification_criteria": "在下一次检查日前确认所指向的公告是否已公开；若已公开则以公告原文为准更新记录。"
+    }
+  ],
+  "selection": {
+    "tab1_event_ids": [
+      "evt-20261023-fixture-tab1-basic",
+      "evt-20261023-fixture-tab1-multisource"
+    ],
+    "tab3_event_ids": [
+      "evt-20261023-fixture-tab3-hostile"
+    ]
+  },
+  "market_data": {
+    "items": [
+      {
+        "text": "对照行情项：用于验证 Tab 2 文本同样被逐字转录。",
+        "source": {
+          "name": "fixture-market-a",
+          "provider_tier": "P0",
+          "locator": "fixture://market/a"
+        },
+        "confidence": "MEDIUM",
+        "estimated": false
+      },
+      {
+        "text": "第二行情项：含 | 管道符的对照文本。",
+        "source": {
+          "name": "fixture-market-b",
+          "provider_tier": "P1",
+          "locator": "fixture://market/b"
+        },
+        "confidence": "LOW-MEDIUM",
+        "estimated": false
+      }
+    ]
+  },
+  "knowledge_bites": [
+    {
+      "cognitive_unit": "对照认知单元：把公告与收入确认之间的时滞作为可复用的判断步骤。",
+      "why_it_matters": "对照说明字段：用于验证 Tab 4 的两个文本字段同样被逐字转录。",
+      "event_ids": [
+        "evt-20261023-fixture-tab1-basic",
+        "evt-20261023-fixture-tab3-hostile"
+      ],
+      "source": {
+        "name": "fixture-kb-a",
+        "provider_tier": "P0",
+        "locator": "fixture://kb/a"
+      },
+      "confidence": "MEDIUM",
+      "estimated": false
+    },
+    {
+      "cognitive_unit": "对照认知单元：引用一个不存在的 Event，用于验证悬空引用被登记而不被静默丢弃。",
+      "why_it_matters": "对照说明字段：悬空引用必须出现在异常登记表中。",
+      "event_ids": [
+        "evt-20261023-fixture-does-not-exist",
+        "evt-20261023-fixture-tab5-tracked"
+      ],
+      "source": {
+        "name": "fixture-kb-b",
+        "provider_tier": "P1",
+        "locator": "fixture://kb/b"
+      },
+      "confidence": "LOW",
+      "estimated": false
+    }
+  ],
+  "follow_up_plan": [
+    {
+      "event_id": "evt-20261023-fixture-tab5-tracked",
+      "action": "对照行动项：核实所指向的公告是否已公开；若已公开则以公告原文更新记录。",
+      "next_check": "2026-10-30",
+      "linked_theme": "对照主题"
+    }
+  ],
+  "methodology": {
+    "methods": ["对照方法说明"],
+    "limitations": ["对照局限说明"]
+  }
+}

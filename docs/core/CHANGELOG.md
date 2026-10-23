@@ -87,6 +87,43 @@
 
 ## Entries
 
+### [Slice 5 — Input Fidelity Review] - 2026-10-23
+
+#### Added
+- `scripts/input_fidelity_review.py` — 研究输入质量守卫 V1：把 Daily Briefing **源文档**转换为完整、确定、逐字段保真的 Markdown 研究输入审查清单。每个 Event Record、每一条 source、每段非 Event 正文（Knowledge Bite / Follow-up / Market Snapshot）、每一条 Knowledge Bite → Event 引用均被**逐字节原样**转录，并标注该字段**是否进入 HTML 正文**与**预计渲染位置**。CLI：`--input <source.json> [--out <path>]`，默认输出 `output/input-fidelity-review-<data_date>.md`；退出码 `0` 成功 / `2` 输入缺失或非法 JSON / `4` **Event Contract 违反（仅 `events[]`）**（无 `3`：本工具无词数门）；完整源文档契约（报告契约、Tab 形状、词数预算）**不由本工具校验**，其余结构问题以非致命异常登记
+- `tests/test_input_fidelity_review.py` — 82 项测试（原 64 项 + Code Review R1 新增 18 项）。T 系列（单元，零 pipeline 依赖）覆盖逐字节保真、内容完整性、字段归属、未选中事件覆盖、未渲染 title 标记、多 source 全量、17 组敌意载荷、围栏原语无损、结构注入防御、KB 反向引用与悬空登记、无自动判定、确定性、输入只读、退出码、自由文本与标识字段的格式策略、行内标识安全降级、非 Event 结构冲突登记、校验范围声明；X 系列（交叉验证，导入现有 pipeline）覆盖渲染位置与 `build_document()` 一致、字段可见性与真实 renderer 一致、探测项与真实 Pipeline 拒绝行为一致、端到端 CLI
+- `tests/fixtures/fidelity_adversarial.json` — 对抗性源文档：多信源事件（含一条有真实 routing 记录的降级）、未选中 fact、hypothesis、open 事件、含反引号/管道符/换行/CRLF/全角/伪造块的敌意文本、悬空 Knowledge Bite 引用
+
+#### Changed
+- `README.md` — 仓库结构块中 `scripts/` 一行由「待实现」更新为「工具脚本（input_fidelity_review.py）」，反映当前实际内容
+
+#### Fixed
+（Code Review R1）
+
+- **校验边界分离**：原实现仅强制 `validate_events()`（Event Contract），未区分「Event Contract 校验」与「完整 Daily Briefing 源文档契约校验」。现将边界显式化——Event Contract 违反仍为致命错误（退出码 `4`），非 Event 结构问题改为非致命探测；清单顶部增设「校验范围」小节，CLI 帮助明示 `validation=Event Contract（events[]）`，任何情况下不声称「完整源文档契约通过」
+- **`SOURCE_STRUCTURE` 非致命异常登记**：新增 `probe_source_document()`，手工镜像 `pipeline.py` 源文档层的非 Event 结构规则（meta / selection / id 列表形态与重复 / methodology / market_data / knowledge_bites / follow_up_plan 形状），命中的冲突以 `SOURCE_STRUCTURE` 类型登记于「异常与契约冲突登记」小节，不中断输出、不改变退出码。Pipeline 生成报告时会以 `ContractError` 拒绝这些文档，而工具仍可为其生成审查清单，保留对部分 Pipeline 无法渲染的源文档的审查能力
+- **自由文本统一 FVB 转录**：`events[].verification_criteria` 不再因长度较短落入行内格式，一律使用围栏块（自由文本）转录；`follow_up_plan[].next_check` 按已批准设计 E-08 由行内标识改为自由文本转录
+- **行内标识字段安全降级**：Knowledge Bite / Market Snapshot / Follow-up 的行内标识字段统一走 `identifier_class()` 判定，值含反引号等破坏性字符时自动降级为围栏块，避免行内代码跨度被截断或破坏清单结构
+- **字段统计更正**：真实 Pilot 的转录字段数由早前记录的 90 更正为 **186**。该差异源于临时核验脚本的路径过滤器写法（要求块名后紧跟 `.`，而真实路径为 `events[0].xxx`），**工具与测试套件从未丢字段**；已在测试中加入「清单路径集合 ↔ 扫描器提取集合」双向等值断言，防止同类漏计复发
+- CLI 文案与错误消息同步更新：退出码 `4` 明确标注为 Event Contract 违反，stdout 增 `validation=` 与 `anomalies=N`
+
+#### Verification
+- 263 项测试全部通过（`PYTHONPATH=src pytest` 与 `env -u PYTHONPATH pytest` 双模式），其中既有 181 项零修改、零回归，Slice 5 测试 82 项（原 64 项 + Code Review R1 新增 18 项）
+- 真实 Pilot 输入实测：双跑输出字节一致（SHA256 `ca662ba1aff0e4d666f166e3ad45906abe2df38242064b64921eea37401e22ab`，39,784 bytes）；**186** 个转录字段逐字节零失配（围栏块 83 + 行内 103），字符普查全等，逐载荷 SHA256 全等，全部路径可回溯至输入字段，无重复路径
+- 校验范围实测：stdout 报 `validation=Event Contract（events[]）`，真实 Pilot 的非 Event 结构探测异常 0 项；清单正文不含「完整源文档契约通过」「源文档契约校验通过」等整体通过声明；错误输入仍以退出码 `4` 终止并明确标注为 Event Contract 违反
+- 渲染状态交叉核验：工具推导的 8 个 Event 渲染位置与 `build_document()` 实际产物 **8/8 一致**（Tab 1: 4 / Tab 3: 2 / Tab 5: 1 / 完全未渲染: 1；title 不进入正文的事件 4 个；KB 引用 6 条，异常登记 0 项）
+- 输入文件零修改：运行前后 SHA256 均为 `d92670729a40802e234b032084eb6bd0d06a4ff142f213d5ffb0eab78331a810`
+- 工具运行时**零** `daily_briefing` 依赖（仅 stdlib + `contracts` 只读复用），不调用 `render()` / `build_document()`，因此超预算或被契约拒绝的输入仍可审查
+
+#### Scope
+- Tooling Feature，无产品代码变更；`src/**`（Event Contract / Pipeline / Renderer / Schema）零修改
+- 未修改 Architecture、Governance、Contract、Renderer、Pipeline、测试基线与 `docs/daily/INPUT_PREPARATION.md`
+- Code Review R1 轮仅修改 `scripts/input_fidelity_review.py` 与 `tests/test_input_fidelity_review.py`；结构探测为 Pipeline 规则的手工镜像（已标注冻结行号），不构成新的契约规则
+- BACKLOG P0-003 保持 Pending（本工具是转录与覆盖核对工具，**不是**验证机制，不关闭 P0-003）
+- 不依赖 Phase 9 / Phase 10；未实施自动事实验证、语义推断、自动修改或 Confidence 调整
+
+---
+
 ### [Slice 4 — Structured Research Input Preparation] - 2026-10-21
 
 #### Added
