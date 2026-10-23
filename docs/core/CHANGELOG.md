@@ -1,7 +1,7 @@
 # CHANGELOG.md — 系统变更记录
 
-> Documentation Skeleton — Phase2 (Documentation)
-> Status: Initialized, entries to be added as system evolves
+> Phase 4 (Daily Briefing V2) — Implementation Complete; Exit Closeout Pending
+> Status: Slice 1–5 条目齐全且可追溯至原始 Commit；Phase 4 正式关闭尚待最终 Gate 裁决
 
 ---
 
@@ -38,10 +38,10 @@
 
 | 字段 | 内容 |
 |------|------|
-| Phase | 2 (Documentation) |
-| 状态 | 已初始化，Observation Phase 条目已添加 |
-| 最后更新 | 2026-07-06 |
-| 下一步 | 每次变更后更新本文档 |
+| Phase | 4 (Daily Briefing V2) — Implementation Complete; Exit Closeout Pending |
+| 状态 | Phase 4 技术能力已完成（Slice 1–5，全部已合并至 `main`）；当前正在执行 Phase 4 Exit Closeout 文档收口；**Phase 4 正式关闭尚待最终 Gate 裁决** |
+| 最后更新 | 2026-10-23 |
+| 下一步 | Phase 4 Final Exit Gate 裁决 → 正式关闭 Phase 4 → 由用户另行裁决是否进入 Phase 5 |
 
 ---
 
@@ -86,6 +86,48 @@
 ---
 
 ## Entries
+
+### [Phase 4 Documentation Closeout — Slice 1–3 History Backfill & Status Alignment] - 2026-10-23
+
+> **阶段状态说明（三层区分，不得混淆）**
+>
+> 1. **Phase 4 技术能力已经完成** — Slice 1–5 全部实现并已合并至 `main@0758e341129ea9700c4648220b4d04eef6e85169`
+> 2. **当前正在执行 Phase 4 Closeout** — 本条目记录的治理文档收口工作本身
+> 3. **Phase 4 正式关闭尚待最终 Gate 裁决** — 本条目**不**宣布 Phase 4 已 CLOSED；关闭动作须由用户在 Final Exit Gate 明确裁决
+
+#### Changed
+
+- `docs/core/CHANGELOG.md` — 补记 Slice 1 / Slice 2 / Slice 3 三个历史条目（原始 Commit `b9949e9` / `cf88c9c` / `08e45d3`），条目内容全部以 Git Commit 为唯一来源；更新本文档头部状态行与 Current Status 表
+- `README.md` — Phase 4 状态标注由「🟡 Authorized — Implementation Not Started」更新为「🟡 Implementation Complete — Exit Closeout Pending」；仓库结构块中 `src/` 与 `tests/` 的「（待实现）」标注更新为实际内容；Legacy Mapping 组件计数修正为实测值；补充「Legacy 组件清单为历史演化参考，不代表当前代码已存在」的说明
+- `docs/core/IMPLEMENTATION_ROADMAP.md` — Roadmap Overview、Phase 4 章节、Current Position 与页脚进度标注同步更新；新增 Phase 4 Slice 实施明细表；补充 Phase 9 / Phase 10 归属澄清（Phase 4 的标注能力 ≠ Evidence 验证机制 ≠ Source Registry）
+- `docs/daily/roadmap.md` — Current State 更新为实际实现状态；Planned Implementation 五项逐条标注实施状态与归属；Dependencies 更新；「Evolution from Legacy」补充历史演化参考说明
+
+#### Verification
+
+- **263 项**测试全部通过（`PYTHONPATH=src pytest -q` 与 `env -u PYTHONPATH pytest -q` 双模式），相对基线 `0758e341129ea9700c4648220b4d04eef6e85169` 零回归（既有 181 项零修改）
+- 变更范围核验：`git diff --name-only main...HEAD` 恰好为四份批准文件；`git diff main...HEAD -- src/ tests/` 为空——Frozen Architecture、Engineering Governance、Event Contract、Pipeline、Renderer 与既有测试均零变更
+- `git diff --check` 无空白错误
+- 文档一致性核验：四份文档统一使用「Phase 4 — Implementation Complete; Exit Closeout Pending」；无任何位置提前宣布 Phase 4 已 CLOSED；**Phase 5 未宣布启动**，**Phase 9 / Phase 10 / BACKLOG P0-003 均未被标记为完成或已开始**
+
+#### Scope
+
+- Documentation-only Closeout：仅四份文档变更，**无产品代码、测试、契约、架构或治理原则变更**
+- 未修改冻结的 Phase 1–11 定义、执行顺序、架构责任与治理原则；未修改 `docs/daily/` 的 product / architecture / workflow / decisions
+- 未启动 Phase 5 Implementation；未启动 Phase 9 / Phase 10 / P0-003；未创建任何 Research Terminal 代码
+- 未创建 Tag / Release，未合并 `main`，未修改既有 Tag
+
+#### Affected Documents/Code
+
+- `docs/core/CHANGELOG.md` — Modified（历史补记 + 阶段状态同步）
+- `README.md` — Modified（阶段状态 + 仓库结构标注 + Legacy Mapping 计数与说明）
+- `docs/core/IMPLEMENTATION_ROADMAP.md` — Modified（进度标注 + Slice 明细 + Phase 归属澄清）
+- `docs/daily/roadmap.md` — Modified（实现状态 + 逐项状态 + 依赖 + Legacy 说明）
+
+#### Commit
+
+- 分支 `chore/phase4-documentation-closeout`（自 `main@0758e341129ea9700c4648220b4d04eef6e85169` 切出，**未合并 main**）；提交 SHA 见该分支 Commit 历史与 `PHASE4_DOCUMENTATION_CLOSEOUT_REPORT.md`
+
+---
 
 ### [Slice 5 — Input Fidelity Review] - 2026-10-23
 
@@ -144,6 +186,113 @@
 - 未修改标准五份 Daily 文档、Architecture、Governance、Roadmap、Contract、Pipeline、Renderer 或测试
 - BACKLOG P0-003 保持 Pending（Evidence 验证机制未完成）
 - 不依赖 Phase 9 / Phase 10
+
+---
+
+### [Slice 3 — Minimum Daily Pipeline] - 2026-10-21
+
+#### Added
+- `src/daily_briefing/pipeline.py` — 最小 Daily Pipeline：把**研究源文档**映射为**可渲染的 Daily Document**。源文档顶层为 `meta` / `events[]` / `selection` / `market_data` / `knowledge_bites` / `follow_up_plan` / `methodology`；输出文档为 `meta` / `events` / `tabs` / `methodology`。核心纯函数 `build_document(source_document)`——无 IO、无网络、不修改入参。事件选择完全由输入显式决定：`selection.tab1_event_ids`（限 `assertion_type=fact`）与 `selection.tab3_event_ids`（限 `assertion_type=inference`），**无打分、无排序、无自动筛选**，仅校验 id 存在、类型匹配、不重复；Tab 2 / Tab 4 / Tab 5 分别由 `market_data` / `knowledge_bites` / `follow_up_plan` 派生；`methodology` 由输入拥有，Pipeline 自身不生成方法论文字。产物经既有报告契约 `validate()` 复验后才返回，共享的双向 Follow-up 规则（DV-8）不被绕过
+- 附带 CLI `python -m daily_briefing.pipeline --input <source.json> [--out <path>]`，沿用 Slice 1 建立的退出码纪律：`0` 成功 / `2` 输入缺失或非法 JSON / `3` 词数门突破 / `4` 契约违反；默认输出 `output/daily-report-<run_date>.html`（文件名用 run date 而非 data date，避免重复运行覆盖既有报告）
+- `tests/fixtures/pipeline_sample.json` — 最小 Pipeline 端到端夹具（源文档形态：6 events / 1 market / 1 knowledge bite / 1 follow-up / 3 selection ids）
+- `tests/test_pipeline.py` — 64 项 Pipeline 测试
+
+#### Verification
+- **181 项**测试全部通过（`PYTHONPATH=src pytest -q` 与 `env -u PYTHONPATH pytest -q` 双模式），较 Slice 2 的 117 项净增 64 项（`tests/test_pipeline.py`）
+- 确定性实测：以 `tests/fixtures/pipeline_sample.json` 双跑同一输入，两次输出**字节一致**（各 9,948 bytes，SHA256 `18481db1add5346accb2bcf3d0bb3aafb07820376deb219e8c7d2963eefc76a8`）
+- 产物结构实测：`build_document()` 输出 `meta` / `events` / `tabs` / `methodology`，`tabs` 键为 `highlights` / `market_snapshot` / `impact_analysis` / `knowledge_bite` / `follow_up`，与冻结五 Tab 一一对应
+- 复核：`src/daily_briefing/pipeline.py` 与 `tests/test_pipeline.py` 自本提交引入后**零修改**（至 `main@0758e34` 一致）
+
+#### Scope
+- Feature Implementation（产品代码）
+- Slice 1 的 `src/daily_briefing/{schema,render,__main__}.py` 与 Slice 1/2 的既有测试**零修改**
+- 未修改 Architecture、Governance、Contract（`src/contracts/**`）、冻结五 Tab 定义与五份 Daily 文档
+- BACKLOG P0-003 保持 Pending（Evidence 验证机制未完成，归属 Phase 9）；Provider Routing 未实现，归属 Phase 10
+- 不依赖 Phase 9 / Phase 10
+
+#### Affected Documents/Code
+- `src/daily_briefing/pipeline.py` — Added（536 行）
+- `tests/fixtures/pipeline_sample.json` — Added（218 行）
+- `tests/test_pipeline.py` — Added（675 行）
+
+#### Commit
+- `08e45d3c19f2921efb4c57c315f38b9cdd6431f1` — `feat(daily-briefing): add minimum daily pipeline`（2026-10-21 09:06:01 +0800）
+
+---
+
+### [Slice 2 — Reusable Event Data Contract] - 2026-10-20
+
+#### Added
+- `src/contracts/event.py` — 可复用、**层级中立**的 Event Contract（429 行）：Event Record 必填字段、枚举取值与 `validate_events()` 校验入口。断言类型 `fact` / `inference` / `hypothesis`；状态取值 `active` / `open` / `superseded` / `rejected`——**刻意不定义 `verified` 状态**，在没有验证机制之前不提供虚假状态值；`hypothesis` 必须声明 `verification_criteria`，`status=open` 同样必须声明验证标准，`fact` 不得携带 `derived_from`
+- `src/contracts/evidence.py` — Evidence 基础类型（195 行）：置信度等级 `HIGH` / `MEDIUM` / `LOW-MEDIUM` / `LOW` 与对应徽章 🟢 / 🟡 / 🟠 / 🔴，来源标注数据结构、Provider 路由链词表，以及 `get_fallback_chain()`——降级必须由真实 routing 记录佐证，不得仅因 provider tier 非 P0 就推断降级
+- `src/contracts/__init__.py` — 契约包公开接口与 `__all__` 导出（59 行）
+- `tests/fixtures/event_sample.json` — Event Contract 夹具（262 行）
+- `tests/test_event_contract.py` — 63 项 Event Contract 测试（734 行）
+
+#### Changed
+- `src/daily_briefing/schema.py` — 重构为消费 `contracts` 层的 Event Contract（+212 / −143），消除日报侧对事件结构的重复定义，使契约成为单一事实来源；其中 `get_fallback_chain()`（校验 Provider 降级须有真实 routing 记录）随 Evidence 基础类型一并迁入 `src/contracts/evidence.py`，由 `src/contracts/__init__.py` 统一导出，规则本身未放宽
+
+#### Verification
+- **117 项**测试全部通过（`PYTHONPATH=src pytest -q` 与 `env -u PYTHONPATH pytest -q` 双模式），较 Slice 1 的 54 项净增 63 项（`tests/test_event_contract.py`）
+- 复核：`src/contracts/event.py`、`src/contracts/evidence.py` 与 `tests/test_event_contract.py` 自本提交引入后**零修改**（至 `main@0758e34` 一致）
+
+#### Scope
+- Feature Implementation（产品代码）
+- Slice 1 的 `render.py` / `__main__.py` 与既有 54 项测试**零修改**
+- 未修改 Architecture、Governance、冻结五 Tab 定义与五份 Daily 文档
+- BACKLOG P0-003 保持 Pending；Evidence 验证机制（Phase 9）与 Source Registry / Provider Routing（Phase 10）未实施
+
+#### Affected Documents/Code
+- `src/contracts/__init__.py` — Added（59 行）
+- `src/contracts/event.py` — Added（429 行）
+- `src/contracts/evidence.py` — Added（195 行）
+- `src/daily_briefing/schema.py` — Modified（+212 / −143）
+- `tests/fixtures/event_sample.json` — Added（262 行）
+- `tests/test_event_contract.py` — Added（734 行）
+
+#### Commit
+- `cf88c9ccbb9fb16a6c70737828aa0cfb904c0c34` — `feat(daily-briefing): add reusable event data contract`（2026-10-20 16:05:17 +0800）
+
+---
+
+### [Slice 1 — Mock-Driven Five-Tab Renderer] - 2026-10-20
+
+#### Added
+- `src/daily_briefing/schema.py` — Daily Briefing V2 输入契约与校验（Slice 1 版 458 行）：`TAB_ORDER` / `TAB_DEFS` 定义冻结五 Tab 的顺序与字段，`WORD_LIMIT = 500` 设定每 Tab 词数上限，`count_words()` / `count_tab_words()` 按 CJK 与西文混合规则计数，`validate()` 为契约入口，`ContractError` / `WordLimitExceeded` 为错误类型，`get_fallback_chain()` 校验 Provider 降级链须有真实路由记录。契约强制五条冻结规则：结论须有证据支撑、数据须带来源标注、数据须带置信度、缺失数据必须显式标注而不得伪造、Provider 降级必须有真实路由记录
+- `src/daily_briefing/render.py` — 五 Tab HTML 渲染器（380 行）：`render()` 产出完整 HTML，`_render_tab()` / `_render_item()` 处理条目，`_source_line()` 输出来源行，`_badges()` 输出置信度徽章与「估算」标记，`_collect_tiers()` 汇总来源层级，`_render_footer()` 输出页脚
+- `src/daily_briefing/__init__.py` — 包公开接口与版本号（17 行），并在 docstring 中声明本切片范围：无真实数据采集、无自动交叉验证、无完整 Evidence Layer，故**不关闭 BACKLOG P0-003**
+- `src/daily_briefing/__main__.py` — CLI 入口（83 行）：`python -m daily_briefing --input <document.json> [--out <path>]`，退出码 `0` 成功 / `2` 输入缺失或非法 JSON / `3` 词数门突破 / `4` 契约违反；默认输出 `output/daily-report-<run_date>.html`；`data_mode=mock` 时于 stdout 声明输出为演示数据
+- `tests/conftest.py` — 测试夹具装载与公共路径辅助（88 行）
+- `tests/fixtures/daily_sample.json` — 渲染夹具（168 行，顶层 `meta` / `tabs` / `methodology`）
+- `tests/test_schema.py` — 19 项契约测试（135 行）
+- `tests/test_render.py` — 19 项渲染测试（178 行）
+- `tests/test_quality_gates.py` — 16 项质量门测试（198 行）
+- `.gitignore` — 新增 `!tests/**/*.json` 例外（5 行），使测试夹具不被 `*.json` 产物规则误排除，保证全新 clone 上测试可运行
+
+#### Verification
+- **54 项**测试全部通过（`PYTHONPATH=src pytest -q` 与 `env -u PYTHONPATH pytest -q` 双模式）：`tests/test_schema.py` 19 + `tests/test_render.py` 19 + `tests/test_quality_gates.py` 16
+- 本切片之前仓库**无任何测试**（在 `e1420a7` 处收集结果为 "no tests ran"），本切片首次建立测试基线
+- 复核：`src/daily_briefing/render.py`、`src/daily_briefing/__main__.py` 及全部 3 个测试文件自本提交引入后**零修改**；`src/daily_briefing/schema.py` 仅在 Slice 2 被重构为消费 `contracts` 层
+
+#### Scope
+- Feature Implementation（产品代码），Phase 4 首个 Slice
+- 未修改 Architecture、Governance、冻结五 Tab 定义与五份 Daily 文档
+- BACKLOG P0-001 / P0-003 保持 Pending；Provider Routing 未实现，归属 Phase 10
+
+#### Affected Documents/Code
+- `.gitignore` — Modified（+5）
+- `src/daily_briefing/__init__.py` — Added（17 行）
+- `src/daily_briefing/__main__.py` — Added（83 行）
+- `src/daily_briefing/render.py` — Added（380 行）
+- `src/daily_briefing/schema.py` — Added（Slice 1 版 458 行）
+- `tests/conftest.py` — Added（88 行）
+- `tests/fixtures/daily_sample.json` — Added（168 行）
+- `tests/test_quality_gates.py` — Added（198 行）
+- `tests/test_render.py` — Added（178 行）
+- `tests/test_schema.py` — Added（135 行）
+
+#### Commit
+- `b9949e9f09f2667f24d444bf5ed60ae02c562f4f` — `feat(daily-briefing): add slice 1 mock-driven five-tab renderer`（2026-10-20 14:48:19 +0800）
 
 ---
 

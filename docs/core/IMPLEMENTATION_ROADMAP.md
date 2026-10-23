@@ -24,7 +24,7 @@
 Phase 1:  Architecture Freeze          ✅ Completed
 Phase 2:  Documentation                 ✅ Completed
 Phase 3:  GitHub First Backup / Release ✅ Completed (2026-07-10)
-Phase 4:  Daily Briefing V2             🟡 Authorized — Implementation Not Started
+Phase 4:  Daily Briefing V2             🟡 Implementation Complete — Exit Closeout Pending
 Phase 5:  Research Terminal V1          ⬜ Pending
 Phase 6:  Industry Research             ⬜ Pending
 Phase 7:  Company Research              ⬜ Pending
@@ -123,13 +123,38 @@ Phase 11: Investment Mapping            ⬜ Pending
 
 ### Phase 4: Daily Briefing V2（重构）
 
-> **Status:** 🟡 Authorized (2026-10-20) — Implementation Not Started
+> **Status:** 🟡 Implementation Complete (2026-10-23) — Exit Closeout Pending
+> **Authorized:** 2026-10-20
+> **Implementation Window:** 2026-10-20 → 2026-10-23
+> **Exit Closeout:** 进行中 — 技术能力已完成、治理文档收口完成；**Phase 4 正式关闭待 Final Exit Gate 裁决**
 
 **目标**：基于冻结 Tab 定义，重构内容密度。
 
 **内容**：
 - 基于冻结 Tab 定义，重构内容密度
 - 强化 Evidence Layer + 可信度标注
+
+**Phase 4 实施明细**（Slice 1–5，全部已合并至 `main@0758e341129ea9700c4648220b4d04eef6e85169`）：
+
+| Slice | Feature | Commit | 类型 |
+|-------|---------|--------|------|
+| Slice 1 | Mock-Driven Five-Tab Renderer | `b9949e9` | Feature Implementation |
+| Slice 2 | Reusable Event Data Contract | `cf88c9c` | Feature Implementation |
+| Slice 3 | Minimum Daily Pipeline | `08e45d3` | Feature Implementation |
+| Slice 4 | Structured Research Input Preparation | `03b0bc3` | Documentation / Workflow |
+| Slice 5 | Input Fidelity Review | `014638a` → `a815686`（合并 `0758e34`） | Tooling Feature |
+
+**交付物**：
+- `src/daily_briefing/` — 五 Tab 渲染器、输入契约、最小 Pipeline（确定性输出，退出码 0/2/3/4）
+- `src/contracts/` — 层级中立的 Event Contract 与 Evidence 类型（供 Layer 2 直接消费）
+- `scripts/input_fidelity_review.py` — 研究输入质量守卫 V1（逐字段保真转录与覆盖核对）
+- `docs/daily/INPUT_PREPARATION.md` — 上游研究资料到源文档的准备指南
+
+**阶段归属澄清（避免与后续 Phase 混淆）**：
+- Phase 4 交付的是**可信度标注能力**（置信度徽章、来源标注、缺失数据显式标注规则、Provider 降级须有真实路由记录），**不等于** Phase 9 的 Evidence Layer **验证机制**——后者未实施，BACKLOG P0-003 保持 Pending
+- Phase 4 **未**实现 Provider Routing Chain / Source Registry——后者归属 Phase 10，未实施
+- Phase 4 **未**实现自动事实验证、跨事件自动判定与 Confidence 自动升级
+- Phase 5 (Research Terminal V1) **尚未启动**；Phase 9 与 Phase 10 仍为 Pending
 
 **冻结输出格式（V2）**：
 
@@ -303,13 +328,13 @@ Phase 1 (Freeze) → Phase 2 (Docs) → Phase 3 (GitHub) → Phase 4 (Daily V2)
 Phase 1: Architecture Freeze          ✅ Done
 Phase 2: Documentation                 ✅ Done
 Phase 3: GitHub First Backup / Release ✅ Done (2026-07-10, tag `v2.0-baseline`)
-Phase 4: Daily Briefing V2             🟡 Here (Authorized, Implementation Not Started)
+Phase 4: Daily Briefing V2             🟡 Here (Implementation Complete, Exit Closeout Pending)
 Phase 5-11:                            ⬜ Future
 ```
 
-**当前执行**：Phase 4 (Daily Briefing V2 重构) — 2026-10-20 用户授权进入 Phase 4。Architecture Migration (WP1–WP8) 已完成，Baseline Status Synchronization 已执行，Feature Implementation 尚未开始（新系统业务代码实现进度 0%）。
+**当前执行**：Phase 4 (Daily Briefing V2 重构) — 2026-10-20 用户授权进入 Phase 4；2026-10-20 → 2026-10-23 完成 Slice 1–5 实施，全部合并至 `main@0758e341129ea9700c4648220b4d04eef6e85169`。Architecture Migration (WP1–WP8) 已完成。当前处于 **Phase 4 Exit Closeout**（治理文档收口）：Phase 4 技术能力已完成，**正式关闭尚待 Final Exit Gate 裁决**。
 
-**下一步**：Phase 4 首个 Feature（Daily Briefing V2）→ 用户 Review & Approval 后开工。
+**下一步**：Phase 4 Final Exit Gate 裁决 → 正式关闭 Phase 4 → 由用户另行裁决是否进入 Phase 5 (Research Terminal V1)。
 
 ---
 
@@ -323,4 +348,4 @@ Phase 5-11:                            ⬜ Future
 
 ---
 
-*本文档整合自已冻结的 Implementation Roadmap V1。Phase 1-11 定义来自 Observation Phase Final Snapshot §8 (2026-07-06)。不新增任何 Phase，不修改已冻结的执行顺序。当前进度标注反映 2026-10-20 的系统状态。*
+*本文档整合自已冻结的 Implementation Roadmap V1。Phase 1-11 定义来自 Observation Phase Final Snapshot §8 (2026-07-06)。不新增任何 Phase，不修改已冻结的执行顺序。当前进度标注反映 2026-10-23 的系统状态。*
