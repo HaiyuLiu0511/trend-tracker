@@ -59,15 +59,16 @@ Layer 5: Knowledge Evolution  → Monthly Outlook（月度展望）
 
 ### Legacy Mapping
 
-Trend Tracker 的 18 个组件已根据演化路径分类：
+Trend Tracker 的 24 个组件（仓库代码 13 + 仓库文档 3 + 本地 Skill 文件 8）已根据演化路径分类：
 
 | 演化路径 | 数量 | 含义 |
 |---------|------|------|
-| EVOLVE | 9 | 代码模式/知识资产可直接复用，将在未来实现阶段重构为 `src/` 模块 |
-| REFERENCE | 6 | 架构概念/模式有参考价值，代码不直接复用 |
-| REPLACED | 2 | 功能已被新仓库文档完全取代 |
+| EVOLVE | 10 | 代码模式/知识资产可直接复用，将在未来实现阶段重构为 `src/` 模块 |
+| REFERENCE | 8 | 架构概念/模式有参考价值，代码不直接复用 |
+| REPLACED | 5 | 功能已被新仓库文档完全取代 |
 | OBSOLETE | 1 | 新架构中无对应项 |
 
+> **说明**：以上为**历史演化参考清单**，记录 Trend Tracker v1.4 遗留代码与本地 Skill 文件的去向，**不代表这些目标模块在当前代码库中已存在**。计数以 `archive/legacy-trend-tracker/LEGACY_MAPPING.md` 的 Summary 表为准。
 > 详见 [archive/legacy-trend-tracker/LEGACY_MAPPING.md](./archive/legacy-trend-tracker/LEGACY_MAPPING.md)
 
 ### 知识资产
@@ -82,6 +83,8 @@ Trend Tracker 的 18 个组件已根据演化路径分类：
 | 主题规范化规则 | `archive/legacy-trend-tracker/processors/theme_registry_mapper.py` | 别名 → 规范主题映射 |
 | Evidence Layer 模式 | `scripts/evidence_layer.py`（本地） | 来源追踪、置信度评分、证据链 |
 | 数据库实体模型 | `archive/legacy-trend-tracker/db/db_init_v1.1.sql` | Events, themes, companies 实体关系 |
+
+> **说明**：以上为遗留代码中的**知识资产**，供未来模块实现时参考；除 `scripts/evidence_layer.py`（本地 Skill 文件，不在仓库内）外，路径均位于 `archive/legacy-trend-tracker/`。Evidence Layer 在**仓库内**的对应实现为 `src/contracts/evidence.py`（Slice 2 引入）。
 
 ---
 
@@ -104,11 +107,11 @@ trend-tracker/
 │   ├── evidence/                ← 证据层标准
 │   └── investment-mapping/      ← 投资映射载体
 │
-├── src/                         ← 源代码（待实现）
-├── config/                      ← 配置（待实现）
-├── examples/                    ← 示例（待实现）
+├── src/                         ← 源代码（contracts + daily_briefing，已实现）
+├── config/                      ← 配置（占位 .gitkeep，待实现）
+├── examples/                    ← 示例（占位 .gitkeep，待实现）
 ├── scripts/                     ← 工具脚本（input_fidelity_review.py）
-├── tests/                       ← 测试（待实现）
+├── tests/                       ← 测试（263 项，已实现）
 │
 └── archive/                     ← 归档
     └── legacy-trend-tracker/    ← Trend Tracker v1.4 遗留代码归档（WP5）
@@ -132,7 +135,7 @@ trend-tracker/
 Phase 1:  Architecture Freeze          ✅ Completed (2026-07-06)
 Phase 2:  Documentation                 ✅ Completed
 Phase 3:  GitHub First Backup / Release ✅ Completed (2026-07-10, tag `v2.0-baseline`)
-Phase 4:  Daily Briefing V2             🟡 Authorized — Implementation Not Started
+Phase 4:  Daily Briefing V2             🟡 Implementation Complete — Exit Closeout Pending
 Phase 5:  Research Terminal V1          ⬜ Pending
 Phase 6:  Industry Research             ⬜ Pending
 Phase 7:  Company Research              ⬜ Pending

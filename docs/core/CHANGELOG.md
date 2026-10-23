@@ -1,7 +1,7 @@
 # CHANGELOG.md — 系统变更记录
 
-> Documentation Skeleton — Phase2 (Documentation)
-> Status: Initialized, entries to be added as system evolves
+> Phase 4 (Daily Briefing V2) — Implementation Complete; Exit Closeout Pending
+> Status: Slice 1–5 条目齐全且可追溯至原始 Commit；Phase 4 正式关闭尚待最终 Gate 裁决
 
 ---
 
@@ -38,10 +38,10 @@
 
 | 字段 | 内容 |
 |------|------|
-| Phase | 2 (Documentation) |
-| 状态 | 已初始化，Observation Phase 条目已添加 |
-| 最后更新 | 2026-07-06 |
-| 下一步 | 每次变更后更新本文档 |
+| Phase | 4 (Daily Briefing V2) — Implementation Complete; Exit Closeout Pending |
+| 状态 | Phase 4 技术能力已完成（Slice 1–5，全部已合并至 `main`）；当前正在执行 Phase 4 Exit Closeout 文档收口；**Phase 4 正式关闭尚待最终 Gate 裁决** |
+| 最后更新 | 2026-10-23 |
+| 下一步 | Phase 4 Final Exit Gate 裁决 → 正式关闭 Phase 4 → 由用户另行裁决是否进入 Phase 5 |
 
 ---
 
@@ -86,6 +86,48 @@
 ---
 
 ## Entries
+
+### [Phase 4 Documentation Closeout — Slice 1–3 History Backfill & Status Alignment] - 2026-10-23
+
+> **阶段状态说明（三层区分，不得混淆）**
+>
+> 1. **Phase 4 技术能力已经完成** — Slice 1–5 全部实现并已合并至 `main@0758e341129ea9700c4648220b4d04eef6e85169`
+> 2. **当前正在执行 Phase 4 Closeout** — 本条目记录的治理文档收口工作本身
+> 3. **Phase 4 正式关闭尚待最终 Gate 裁决** — 本条目**不**宣布 Phase 4 已 CLOSED；关闭动作须由用户在 Final Exit Gate 明确裁决
+
+#### Changed
+
+- `docs/core/CHANGELOG.md` — 补记 Slice 1 / Slice 2 / Slice 3 三个历史条目（原始 Commit `b9949e9` / `cf88c9c` / `08e45d3`），条目内容全部以 Git Commit 为唯一来源；更新本文档头部状态行与 Current Status 表
+- `README.md` — Phase 4 状态标注由「🟡 Authorized — Implementation Not Started」更新为「🟡 Implementation Complete — Exit Closeout Pending」；仓库结构块中 `src/` 与 `tests/` 的「（待实现）」标注更新为实际内容；Legacy Mapping 组件计数修正为实测值；补充「Legacy 组件清单为历史演化参考，不代表当前代码已存在」的说明
+- `docs/core/IMPLEMENTATION_ROADMAP.md` — Roadmap Overview、Phase 4 章节、Current Position 与页脚进度标注同步更新；新增 Phase 4 Slice 实施明细表；补充 Phase 9 / Phase 10 归属澄清（Phase 4 的标注能力 ≠ Evidence 验证机制 ≠ Source Registry）
+- `docs/daily/roadmap.md` — Current State 更新为实际实现状态；Planned Implementation 五项逐条标注实施状态与归属；Dependencies 更新；「Evolution from Legacy」补充历史演化参考说明
+
+#### Verification
+
+- **263 项**测试全部通过（`PYTHONPATH=src pytest -q` 与 `env -u PYTHONPATH pytest -q` 双模式），相对基线 `0758e341129ea9700c4648220b4d04eef6e85169` 零回归（既有 181 项零修改）
+- 变更范围核验：`git diff --name-only main...HEAD` 恰好为四份批准文件；`git diff main...HEAD -- src/ tests/` 为空——Frozen Architecture、Engineering Governance、Event Contract、Pipeline、Renderer 与既有测试均零变更
+- `git diff --check` 无空白错误
+- 文档一致性核验：四份文档统一使用「Phase 4 — Implementation Complete; Exit Closeout Pending」；无任何位置提前宣布 Phase 4 已 CLOSED；**Phase 5 未宣布启动**，**Phase 9 / Phase 10 / BACKLOG P0-003 均未被标记为完成或已开始**
+
+#### Scope
+
+- Documentation-only Closeout：仅四份文档变更，**无产品代码、测试、契约、架构或治理原则变更**
+- 未修改冻结的 Phase 1–11 定义、执行顺序、架构责任与治理原则；未修改 `docs/daily/` 的 product / architecture / workflow / decisions
+- 未启动 Phase 5 Implementation；未启动 Phase 9 / Phase 10 / P0-003；未创建任何 Research Terminal 代码
+- 未创建 Tag / Release，未合并 `main`，未修改既有 Tag
+
+#### Affected Documents/Code
+
+- `docs/core/CHANGELOG.md` — Modified（历史补记 + 阶段状态同步）
+- `README.md` — Modified（阶段状态 + 仓库结构标注 + Legacy Mapping 计数与说明）
+- `docs/core/IMPLEMENTATION_ROADMAP.md` — Modified（进度标注 + Slice 明细 + Phase 归属澄清）
+- `docs/daily/roadmap.md` — Modified（实现状态 + 逐项状态 + 依赖 + Legacy 说明）
+
+#### Commit
+
+- 分支 `chore/phase4-documentation-closeout`（自 `main@0758e341129ea9700c4648220b4d04eef6e85169` 切出，**未合并 main**）；提交 SHA 见该分支 Commit 历史与 `PHASE4_DOCUMENTATION_CLOSEOUT_REPORT.md`
+
+---
 
 ### [Slice 5 — Input Fidelity Review] - 2026-10-23
 
