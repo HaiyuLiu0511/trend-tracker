@@ -87,6 +87,31 @@
 
 ## Entries
 
+### [Slice 5 — Input Fidelity Review] - 2026-10-23
+
+#### Added
+- `scripts/input_fidelity_review.py` — 研究输入质量守卫 V1：把 Daily Briefing **源文档**转换为完整、确定、逐字段保真的 Markdown 研究输入审查清单。每个 Event Record、每一条 source、每段非 Event 正文（Knowledge Bite / Follow-up / Market Snapshot）、每一条 Knowledge Bite → Event 引用均被**逐字节原样**转录，并标注该字段**是否进入 HTML 正文**与**预计渲染位置**。CLI：`--input <source.json> [--out <path>]`，默认输出 `output/input-fidelity-review-<data_date>.md`；退出码 `0` 成功 / `2` 输入缺失或非法 JSON / `4` 契约不合法（无 `3`：本工具无词数门）
+- `tests/test_input_fidelity_review.py` — 64 项测试。T 系列（单元，零 pipeline 依赖）覆盖逐字节保真、内容完整性、字段归属、未选中事件覆盖、未渲染 title 标记、多 source 全量、17 组敌意载荷、围栏原语无损、结构注入防御、KB 反向引用与悬空登记、无自动判定、确定性、输入只读、退出码；X 系列（交叉验证，导入现有 pipeline）覆盖渲染位置与 `build_document()` 一致、字段可见性与真实 renderer 一致、端到端 CLI
+- `tests/fixtures/fidelity_adversarial.json` — 对抗性源文档：多信源事件（含一条有真实 routing 记录的降级）、未选中 fact、hypothesis、open 事件、含反引号/管道符/换行/CRLF/全角/伪造块的敌意文本、悬空 Knowledge Bite 引用
+
+#### Changed
+- `README.md` — 仓库结构块中 `scripts/` 一行由「待实现」更新为「工具脚本（input_fidelity_review.py）」，反映当前实际内容
+
+#### Verification
+- 245 项测试全部通过（`PYTHONPATH=src pytest` 与 `env -u PYTHONPATH pytest` 双模式），其中既有 181 项零修改、零回归，新增 64 项
+- 真实 Pilot 输入实测：双跑输出字节一致（SHA256 `72490c1dfcc8b39ee0739566544e2615febdca753da655ab82318e9e3784dd6a`，38,673 bytes）；90 个转录字段逐字节零失配，字符普查全等，全部路径可回溯至输入字段
+- 渲染状态交叉核验：工具推导的 8 个 Event 渲染位置与 `build_document()` 实际产物 **8/8 一致**（Tab 1: 4 / Tab 3: 2 / Tab 5: 1 / 完全未渲染: 1；title 不进入正文的事件 4 个；KB 引用 6 条，异常登记 0 项）
+- 输入文件零修改：运行前后 SHA256 均为 `d92670729a40802e234b032084eb6bd0d06a4ff142f213d5ffb0eab78331a810`
+- 工具运行时**零** `daily_briefing` 依赖（仅 stdlib + `contracts` 只读复用），不调用 `render()` / `build_document()`，因此超预算或被契约拒绝的输入仍可审查
+
+#### Scope
+- Tooling Feature，无产品代码变更；`src/**`（Event Contract / Pipeline / Renderer / Schema）零修改
+- 未修改 Architecture、Governance、Contract、Renderer、Pipeline、测试基线与 `docs/daily/INPUT_PREPARATION.md`
+- BACKLOG P0-003 保持 Pending（本工具是转录与覆盖核对工具，**不是**验证机制，不关闭 P0-003）
+- 不依赖 Phase 9 / Phase 10；未实施自动事实验证、语义推断、自动修改或 Confidence 调整
+
+---
+
 ### [Slice 4 — Structured Research Input Preparation] - 2026-10-21
 
 #### Added
